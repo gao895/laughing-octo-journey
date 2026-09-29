@@ -6,6 +6,7 @@
 Unity や Blender の知識は必要ありません。ユーザーがやることは「作品を選ぶ」「会場を選ぶ」「公開する」だけです。
 
 - 個展作成ウィザード（名前 → 会場 → 作品 → 展示方法 → 完成）
+- 会場は 8 種類（白い美術館・星空・和風・城下町・森・海辺・ハロウィン・シンプル）
 - 作品は壁に自動で展示（多いときは「次の部屋」を自動生成）
 - ブラウザで歩ける 3D ギャラリー（PC: WASD/矢印キー + ドラッグ、スマホ: スティック + スワイプ）
 - 作品をクリック/タップすると詳細（タイトル・作者・説明）
@@ -182,6 +183,7 @@ app/                         ページ（App Router）
   gallery/[slug]/            公開ページ（来場者用）
 components/
   ui/                        ボタン・モーダル・トーストなど
+  gallery/venues/            会場ごとの装飾（1 会場 = 1 ファイル）
   gallery/                   3D: GalleryScene, GalleryCamera, GalleryControls, ArtworkFrame,
                              ArtworkModal, GalleryLighting, GalleryRoom, TitleWall, GalleryViewer …
   dashboard/                 GalleryCard, ArtworkUploader, GalleryWizard, editor/ …
@@ -205,7 +207,7 @@ scripts/e2e-demo.mjs         E2E スクリプト
 
 ### MVP（実装済み）
 
-トップページ / ログイン / 新規登録 / ダッシュボード / 個展作成ウィザード / 会場選択（3 種類）/
+トップページ / ログイン / 新規登録 / ダッシュボード / 個展作成ウィザード / 会場選択（8 種類：白い美術館・星空・和風・城下町・森・海辺・ハロウィン・シンプル）/
 画像アップロード（検証・最適化）/ 作品タイトル・説明 / 自動展示（おまかせ・均等・大きく・自分で配置）/
 3D ギャラリー / WASD・矢印キー / マウス（ドラッグ）視点操作 / スマホ用スティック / 作品クリック・詳細 /
 ホバーで明るく + ポインター / 保存 / プレビュー / 公開・下書き / 公開 URL・URL コピー /
@@ -213,16 +215,16 @@ BGM（MP3/WAV、ボタンで再生）/ 照明プリセット / 来場数 / Supab
 
 ### 設計のみ対応（MVP 後に追加）
 
-| 機能                            | 準備されているもの                                                          |
-| ------------------------------- | --------------------------------------------------------------------------- |
-| 会場 5 種（城下町ほか）         | `lib/gallery/templates.ts` に定義済み（「準備中」表示）。装飾を追加するだけ |
-| 動画（MP4）/ 3D（GLB）          | `artworks.media_type`（image / video / model）                              |
-| VRM アバター                    | `GalleryScene` に子要素として追加できる構造。カメラ制御は `GalleryControls` |
-| 複数人同時接続・チャット        | `gallery_visits` / 匿名 `visitor_id`（`lib/visitor.ts`）→ Supabase Realtime |
-| いいね・コメント                | `likes` / `comments` テーブルと RLS                                         |
-| SNS 共有（X / LINE）            | `lib/share.ts` の `shareLinks()`                                            |
-| AI タイトル・説明・自動個展     | `lib/ai/index.ts` の `AiProvider`（ボタンは設置済み、サーバー経由で実装）   |
-| 高度編集モード（XYZ）           | `artworks.position_*` / `rotation_y` / `scale` に保存済み                   |
-| 壁の色など細かな設定            | `galleries.settings`（jsonb）                                               |
-| 英語 UI                         | `lib/i18n/ja.ts` と同じ形の辞書を追加                                       |
-| NFT・販売・有料プラン・管理画面 | 未着手                                                                      |
+| 機能                            | 準備されているもの                                                                                 |
+| ------------------------------- | -------------------------------------------------------------------------------------------------- |
+| 新しい会場                      | `lib/gallery/templates.ts` にスタイルを 1 件、`components/gallery/venues/` に装飾を 1 ファイル追加 |
+| 動画（MP4）/ 3D（GLB）          | `artworks.media_type`（image / video / model）                                                     |
+| VRM アバター                    | `GalleryScene` に子要素として追加できる構造。カメラ制御は `GalleryControls`                        |
+| 複数人同時接続・チャット        | `gallery_visits` / 匿名 `visitor_id`（`lib/visitor.ts`）→ Supabase Realtime                        |
+| いいね・コメント                | `likes` / `comments` テーブルと RLS                                                                |
+| SNS 共有（X / LINE）            | `lib/share.ts` の `shareLinks()`                                                                   |
+| AI タイトル・説明・自動個展     | `lib/ai/index.ts` の `AiProvider`（ボタンは設置済み、サーバー経由で実装）                          |
+| 高度編集モード（XYZ）           | `artworks.position_*` / `rotation_y` / `scale` に保存済み                                          |
+| 壁の色など細かな設定            | `galleries.settings`（jsonb）                                                                      |
+| 英語 UI                         | `lib/i18n/ja.ts` と同じ形の辞書を追加                                                              |
+| NFT・販売・有料プラン・管理画面 | 未着手                                                                                             |

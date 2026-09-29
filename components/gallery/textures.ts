@@ -1,6 +1,7 @@
 'use client';
 
 import { CanvasTexture, RepeatWrapping, SRGBColorSpace } from 'three';
+import type { FloorPattern } from '@/lib/gallery/templates';
 
 function canvasTexture(size: number, draw: (ctx: CanvasRenderingContext2D, size: number) => void) {
   const canvas = document.createElement('canvas');
@@ -69,4 +70,104 @@ export function starFloorTexture(base: string) {
       ctx.fillRect((i * 53) % s, (i * 97) % s, 1.5, 1.5);
     }
   });
+}
+
+/** Irregular stone pavement (Castle Town floor). */
+export function stoneTexture(base: string) {
+  return canvasTexture(256, (ctx, s) => {
+    ctx.fillStyle = '#4a4744';
+    ctx.fillRect(0, 0, s, s);
+    const rows = 4;
+    const h = s / rows;
+    for (let r = 0; r < rows; r++) {
+      let x = r % 2 ? -h / 2 : 0;
+      let i = 0;
+      while (x < s) {
+        const w = h * (0.9 + ((r * 7 + i * 3) % 5) * 0.15);
+        ctx.fillStyle = base;
+        ctx.globalAlpha = 0.85 + ((r + i) % 3) * 0.05;
+        ctx.fillRect(x + 3, r * h + 3, w - 6, h - 6);
+        x += w;
+        i++;
+      }
+    }
+    ctx.globalAlpha = 1;
+  });
+}
+
+/** Moss and grass (Forest floor). */
+export function grassTexture(base: string) {
+  return canvasTexture(256, (ctx, s) => {
+    ctx.fillStyle = base;
+    ctx.fillRect(0, 0, s, s);
+    for (let i = 0; i < 900; i++) {
+      const light = (i * 37) % 3 === 0;
+      ctx.fillStyle = light ? 'rgba(190,220,120,0.35)' : 'rgba(30,60,20,0.3)';
+      const x = (i * 71) % s;
+      const y = (i * 131) % s;
+      ctx.fillRect(x, y, 1.5, 3 + (i % 4));
+    }
+  });
+}
+
+/** Whitewashed deck boards (Seaside floor). */
+export function deckTexture(base: string) {
+  return canvasTexture(256, (ctx, s) => {
+    ctx.fillStyle = base;
+    ctx.fillRect(0, 0, s, s);
+    const board = s / 6;
+    for (let i = 0; i < 6; i++) {
+      ctx.fillStyle = `rgba(90,70,40,${0.04 + (i % 3) * 0.03})`;
+      ctx.fillRect(i * board, 0, board, s);
+      ctx.fillStyle = 'rgba(60,45,30,0.35)';
+      ctx.fillRect(i * board, 0, 2, s);
+      ctx.fillRect(i * board, ((i * 89) % s) + 20, board, 1.5);
+    }
+  });
+}
+
+/** Polished concrete with faint speckles (Simple floor). */
+export function concreteTexture(base: string) {
+  return canvasTexture(256, (ctx, s) => {
+    ctx.fillStyle = base;
+    ctx.fillRect(0, 0, s, s);
+    for (let i = 0; i < 1400; i++) {
+      ctx.fillStyle = i % 2 ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.06)';
+      ctx.fillRect((i * 53) % s, (i * 97) % s, 2, 2);
+    }
+    ctx.fillStyle = 'rgba(0,0,0,0.12)';
+    ctx.fillRect(0, 0, s, 1);
+    ctx.fillRect(0, 0, 1, s);
+  });
+}
+
+/** Namako-kabe: black tiles joined by raised white plaster in a diagonal grid (Castle Town walls). */
+export function namakoTexture() {
+  return canvasTexture(128, (ctx, s) => {
+    ctx.fillStyle = '#23262b';
+    ctx.fillRect(0, 0, s, s);
+    ctx.strokeStyle = '#eeeae0';
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.moveTo(0, s / 2);
+    ctx.lineTo(s / 2, 0);
+    ctx.lineTo(s, s / 2);
+    ctx.lineTo(s / 2, s);
+    ctx.closePath();
+    ctx.stroke();
+  });
+}
+
+const FLOORS: Record<FloorPattern, (base: string) => ReturnType<typeof canvasTexture>> = {
+  wood: woodTexture,
+  tatami: tatamiTexture,
+  stars: starFloorTexture,
+  stone: stoneTexture,
+  grass: grassTexture,
+  deck: deckTexture,
+  concrete: concreteTexture,
+};
+
+export function floorTexture(pattern: FloorPattern, base: string) {
+  return FLOORS[pattern](base);
 }
