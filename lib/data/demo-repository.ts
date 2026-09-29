@@ -4,6 +4,7 @@ import type { Artwork, ArtworkUpdate, PreparedImage } from '@/types/artwork';
 import type { Gallery, GalleryUpdate, GalleryWithArtworks } from '@/types/gallery';
 import type { AppUser } from '@/types/profile';
 import { createSlug } from '@/lib/gallery/slug';
+import { cleanArtistName, galleryAuthorName } from '@/lib/gallery/author';
 import {
   sanitizeText,
   TITLE_MAX,
@@ -88,6 +89,7 @@ function sampleState(): DemoState {
       gallery_id: galleryId,
       title: a.title,
       description: a.description,
+      artist_name: null,
       media_type: 'image',
       image_url: url,
       thumbnail_url: url,
@@ -119,6 +121,7 @@ function sampleState(): DemoState {
         title: SAMPLE_GALLERY.title,
         description: SAMPLE_GALLERY.description,
         slug: SAMPLE_GALLERY.slug,
+        artist_name: null,
         template: 'starlight',
         status: 'published',
         layout_mode: 'auto',
@@ -278,7 +281,10 @@ export class DemoRepository implements GalleryRepository {
       .slice(0, limit)
       .map((g) => ({
         gallery: g,
-        authorName: s.users.find((u) => u.id === g.user_id)?.displayName ?? '',
+        authorName: galleryAuthorName(
+          g,
+          s.users.find((u) => u.id === g.user_id)?.displayName ?? '',
+        ),
         artworkCount: s.artworks.filter((a) => a.gallery_id === g.id).length,
       }));
   }
@@ -289,7 +295,7 @@ export class DemoRepository implements GalleryRepository {
       artworks: s.artworks
         .filter((a) => a.gallery_id === g.id)
         .sort((a, b) => a.order_index - b.order_index),
-      authorName: s.users.find((u) => u.id === g.user_id)?.displayName ?? '',
+      authorName: galleryAuthorName(g, s.users.find((u) => u.id === g.user_id)?.displayName ?? ''),
     };
   }
 
@@ -318,6 +324,7 @@ export class DemoRepository implements GalleryRepository {
         title,
         description: sanitizeText(input.description ?? '', DESCRIPTION_MAX, { multiline: true }),
         slug,
+        artist_name: cleanArtistName(input.artist_name),
         template: input.template,
         status: 'draft',
         layout_mode: input.layout_mode,
@@ -341,6 +348,7 @@ export class DemoRepository implements GalleryRepository {
       if (patch.description !== undefined) {
         clean.description = sanitizeText(patch.description, DESCRIPTION_MAX, { multiline: true });
       }
+      if (patch.artist_name !== undefined) clean.artist_name = cleanArtistName(patch.artist_name);
       Object.assign(g, clean, { updated_at: now() });
       return { ...g };
     });
@@ -373,6 +381,7 @@ export class DemoRepository implements GalleryRepository {
         gallery_id: g.id,
         title: sanitizeText(input.title, TITLE_MAX),
         description: sanitizeText(input.description, DESCRIPTION_MAX, { multiline: true }),
+        artist_name: null,
         media_type: 'image',
         image_url: full,
         thumbnail_url: thumb,
@@ -405,6 +414,7 @@ export class DemoRepository implements GalleryRepository {
         if (patch.description !== undefined) {
           clean.description = sanitizeText(patch.description, DESCRIPTION_MAX, { multiline: true });
         }
+        if (patch.artist_name !== undefined) clean.artist_name = cleanArtistName(patch.artist_name);
         Object.assign(a, clean, { updated_at: now() });
       }
     });

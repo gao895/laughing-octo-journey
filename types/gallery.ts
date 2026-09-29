@@ -32,6 +32,8 @@ export interface Gallery {
   title: string;
   description: string;
   slug: string;
+  /** 作者名 shown to visitors. Empty/null = the owner's display name. */
+  artist_name: string | null;
   template: TemplateId;
   status: GalleryStatus;
   layout_mode: LayoutMode;
@@ -58,6 +60,7 @@ export type GalleryUpdate = Partial<
     Gallery,
     | 'title'
     | 'description'
+    | 'artist_name'
     | 'template'
     | 'status'
     | 'layout_mode'

@@ -4,6 +4,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import type { Artwork } from '@/types/artwork';
 import { safeMediaUrl } from '@/lib/gallery/validation';
+import { artworkAuthorName } from '@/lib/gallery/author';
 import { t } from '@/lib/i18n';
 
 interface ArtworkModalProps {
@@ -15,6 +16,7 @@ interface ArtworkModalProps {
 /** Artwork details: image, title, author and description. */
 export function ArtworkModal({ artwork, authorName, onClose }: ArtworkModalProps) {
   const src = safeMediaUrl(artwork?.image_url);
+  const artworkName = artwork ? artworkAuthorName(artwork, authorName) : authorName;
   return (
     <Modal open={Boolean(artwork)} onClose={onClose} title={artwork?.title || undefined} size="lg">
       {artwork && (
@@ -32,9 +34,9 @@ export function ArtworkModal({ artwork, authorName, onClose }: ArtworkModalProps
             </div>
           )}
           <div className="space-y-3">
-            {authorName && (
+            {artworkName && (
               <p className="text-mist text-sm">
-                {t.viewer.author}：<span className="text-paper">{authorName}</span>
+                {t.viewer.author}：<span className="text-paper">{artworkName}</span>
               </p>
             )}
             {artwork.description && (

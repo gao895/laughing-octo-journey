@@ -6,6 +6,8 @@ export interface Artwork {
   gallery_id: string;
   title: string;
   description: string;
+  /** For group shows: creator of this artwork. Null = the exhibition's 作者名. */
+  artist_name: string | null;
   media_type: MediaType;
   image_url: string;
   thumbnail_url: string;
@@ -27,6 +29,7 @@ export type ArtworkUpdate = Partial<
     Artwork,
     | 'title'
     | 'description'
+    | 'artist_name'
     | 'order_index'
     | 'position_x'
     | 'position_y'

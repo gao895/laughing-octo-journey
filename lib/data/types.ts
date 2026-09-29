@@ -18,6 +18,7 @@ export interface PublishedGalleryCard {
 export interface NewGalleryInput {
   title: string;
   description?: string;
+  artist_name?: string;
   template: TemplateId;
   layout_mode: LayoutMode;
 }

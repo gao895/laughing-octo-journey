@@ -35,9 +35,11 @@ import {
 import {
   AUDIO_ACCEPT,
   DESCRIPTION_MAX,
+  DISPLAY_NAME_MAX,
   TITLE_MAX,
   validateAudioFile,
 } from '@/lib/gallery/validation';
+import { galleryAuthorName } from '@/lib/gallery/author';
 import { copyText, galleryUrl } from '@/lib/share';
 import { isTouchDevice, isWebGLAvailable } from '@/lib/webgl';
 import { t } from '@/lib/i18n';
@@ -362,6 +364,7 @@ export function GalleryEditor({ galleryId }: { galleryId: string }) {
     );
   }
 
+  const galleryAuthor = galleryAuthorName(gallery, user.displayName);
   const selectedArtwork = artworks.find((a) => a.id === selectedId) ?? null;
   const published = gallery.status === 'published';
 
@@ -412,7 +415,7 @@ export function GalleryEditor({ galleryId }: { galleryId: string }) {
           {webgl ? (
             <GalleryScene
               gallery={gallery}
-              authorName={user.displayName}
+              authorName={galleryAuthor}
               artworks={artworks}
               layout={layout}
               selectedId={selectedId}
@@ -477,6 +480,14 @@ export function GalleryEditor({ galleryId }: { galleryId: string }) {
                   maxLength={TITLE_MAX}
                   onChange={(e) => editGallery({ title: e.target.value })}
                 />
+                <TextField
+                  label={t.editor.artistName}
+                  value={gallery.artist_name ?? ''}
+                  placeholder={user.displayName}
+                  maxLength={DISPLAY_NAME_MAX}
+                  hint={t.editor.artistNameHelp(user.displayName)}
+                  onChange={(e) => editGallery({ artist_name: e.target.value })}
+                />
                 <TextArea
                   label={t.editor.galleryDescription}
                   placeholder={t.editor.galleryDescriptionPlaceholder}
@@ -512,6 +523,7 @@ export function GalleryEditor({ galleryId }: { galleryId: string }) {
                       <ArtworkListItem
                         key={a.id}
                         artwork={a}
+                        galleryAuthor={galleryAuthor}
                         index={i}
                         total={artworks.length}
                         selected={a.id === selectedId}

@@ -9,7 +9,12 @@ import { useToast } from '@/components/ui/Toast';
 import { getRepository } from '@/lib/data';
 import { logDev, toFriendlyMessage } from '@/lib/errors';
 import { useCurrentUser } from '@/lib/hooks/useCurrentUser';
-import { DESCRIPTION_MAX, TITLE_MAX, validateGalleryTitle } from '@/lib/gallery/validation';
+import {
+  DESCRIPTION_MAX,
+  DISPLAY_NAME_MAX,
+  TITLE_MAX,
+  validateGalleryTitle,
+} from '@/lib/gallery/validation';
 import { t } from '@/lib/i18n';
 import { AiTitleButton } from './AiTitleButton';
 import { ArtworkUploader, type PreparedFile } from './ArtworkUploader';
@@ -38,6 +43,8 @@ export function GalleryWizard() {
   const toast = useToast();
   const [step, setStep] = useState(1);
   const [title, setTitle] = useState('');
+  // null = untouched: the account's display name is used.
+  const [artistName, setArtistName] = useState<string | null>(null);
   const [titleError, setTitleError] = useState<string | null>(null);
   const [template, setTemplate] = useState<TemplateId>('white-museum');
   const [pending, setPending] = useState<PendingArtwork[]>([]);
@@ -96,7 +103,12 @@ export function GalleryWizard() {
     const repo = getRepository();
     setCreating({ done: 0, total: pending.length });
     try {
-      const gallery = await repo.createGallery({ title, template, layout_mode: layoutMode });
+      const gallery = await repo.createGallery({
+        title,
+        artist_name: artistName ?? undefined,
+        template,
+        layout_mode: layoutMode,
+      });
       let failed = 0;
       for (const [i, item] of pending.entries()) {
         try {
@@ -167,6 +179,14 @@ export function GalleryWizard() {
               error={titleError}
               hint={t.wizard.step1Help}
               autoFocus
+            />
+            <TextField
+              label={t.wizard.artistLabel}
+              value={artistName ?? user.displayName}
+              maxLength={DISPLAY_NAME_MAX}
+              onChange={(e) => setArtistName(e.target.value)}
+              hint={t.wizard.artistHelp}
+              autoComplete="nickname"
             />
             <div className="mt-auto flex justify-end">
               <Button type="submit" size="lg">

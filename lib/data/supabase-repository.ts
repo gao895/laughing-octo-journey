@@ -7,6 +7,7 @@ import type { AppUser } from '@/types/profile';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { STORAGE_BUCKET } from '@/lib/supabase/config';
 import { createSlug } from '@/lib/gallery/slug';
+import { cleanArtistName, galleryAuthorName } from '@/lib/gallery/author';
 import {
   isUuid,
   sanitizeText,
@@ -137,7 +138,7 @@ export class SupabaseRepository implements GalleryRepository {
       const gallery = rest as unknown as Gallery;
       return {
         gallery,
-        authorName: names.get(gallery.user_id) ?? '',
+        authorName: galleryAuthorName(gallery, names.get(gallery.user_id) ?? ''),
         artworkCount: countOf(artworks),
       };
     });
@@ -164,7 +165,7 @@ export class SupabaseRepository implements GalleryRepository {
     return {
       gallery,
       artworks: (data ?? []) as Artwork[],
-      authorName: names.get(gallery.user_id) ?? '',
+      authorName: galleryAuthorName(gallery, names.get(gallery.user_id) ?? ''),
     };
   }
 
@@ -204,6 +205,7 @@ export class SupabaseRepository implements GalleryRepository {
           title,
           description: sanitizeText(input.description ?? '', DESCRIPTION_MAX, { multiline: true }),
           slug: createSlug(title),
+          artist_name: cleanArtistName(input.artist_name),
           template: input.template,
           layout_mode: input.layout_mode,
           status: 'draft',
@@ -223,6 +225,7 @@ export class SupabaseRepository implements GalleryRepository {
     if (patch.description !== undefined) {
       clean.description = sanitizeText(patch.description, DESCRIPTION_MAX, { multiline: true });
     }
+    if (patch.artist_name !== undefined) clean.artist_name = cleanArtistName(patch.artist_name);
     const { data, error } = await this.db
       .from('galleries')
       .update(clean)
@@ -313,6 +316,7 @@ export class SupabaseRepository implements GalleryRepository {
         if (patch.description !== undefined) {
           clean.description = sanitizeText(patch.description, DESCRIPTION_MAX, { multiline: true });
         }
+        if (patch.artist_name !== undefined) clean.artist_name = cleanArtistName(patch.artist_name);
         // RLS guarantees only artworks in the user's own galleries are updated.
         return this.db.from('artworks').update(clean).eq('id', id);
       }),

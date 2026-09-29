@@ -83,6 +83,8 @@ export const ja = {
     step1Title: '個展の名前',
     step1Placeholder: '例：星空の記憶',
     step1Help: 'あとから変更できます。',
+    artistLabel: '作者名',
+    artistHelp: '来場者に表示される名前です。ペンネームでもOK。',
     step2Title: 'どんな会場にしますか？',
     step3Title: '作品を追加',
     step3Help: 'タイトルと説明はあとからでも入力できます。',
@@ -161,6 +163,13 @@ export const ja = {
     deleteArtworkConfirm: 'この作品を削除しますか？',
     unsaved: '未保存の変更があります',
     openPublicPage: '公開ページを開く',
+    artistName: '作者名',
+    artistNameHelp: (name: string) =>
+      `来場者に表示される名前です。空欄のときは「${name}」になります。`,
+    artworkArtist: '作者名（この作品だけ変える場合）',
+    artworkArtistHelp: (name: string) =>
+      `合同展などで使います。空欄のときは「${name}」になります。`,
+    detailsSummary: '説明・作者名',
     adjust: '位置を調整',
     selectArtwork: (name: string) => `${name} を選ぶ`,
   },

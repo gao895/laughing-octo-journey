@@ -2,16 +2,23 @@
 
 import type { Artwork } from '@/types/artwork';
 import { TextArea, TextField } from '@/components/ui/Field';
-import { DESCRIPTION_MAX, TITLE_MAX, safeMediaUrl } from '@/lib/gallery/validation';
+import {
+  DESCRIPTION_MAX,
+  DISPLAY_NAME_MAX,
+  TITLE_MAX,
+  safeMediaUrl,
+} from '@/lib/gallery/validation';
 import { t } from '@/lib/i18n';
 import { AiTitleButton } from '../AiTitleButton';
 
 interface Props {
   artwork: Artwork;
+  /** The exhibition's 作者名, used when this artwork has none of its own. */
+  galleryAuthor: string;
   index: number;
   total: number;
   selected: boolean;
-  onChange: (patch: { title?: string; description?: string }) => void;
+  onChange: (patch: { title?: string; description?: string; artist_name?: string }) => void;
   onSelect: () => void;
   onMove: (dir: -1 | 1) => void;
   onDelete: () => void;
@@ -19,6 +26,7 @@ interface Props {
 
 export function ArtworkListItem({
   artwork,
+  galleryAuthor,
   index,
   total,
   selected,
@@ -58,7 +66,7 @@ export function ArtworkListItem({
       </div>
       <details className="group mt-3">
         <summary className="text-mist hover:text-paper cursor-pointer text-xs select-none">
-          {t.uploader.description}
+          {t.editor.detailsSummary}
         </summary>
         <div className="mt-3 flex flex-col gap-2">
           <TextArea
@@ -67,6 +75,14 @@ export function ArtworkListItem({
             value={artwork.description}
             maxLength={DESCRIPTION_MAX}
             onChange={(e) => onChange({ description: e.target.value })}
+          />
+          <TextField
+            label={t.editor.artworkArtist}
+            value={artwork.artist_name ?? ''}
+            placeholder={galleryAuthor}
+            maxLength={DISPLAY_NAME_MAX}
+            hint={t.editor.artworkArtistHelp(galleryAuthor)}
+            onChange={(e) => onChange({ artist_name: e.target.value })}
           />
           <AiTitleButton
             imageUrl={artwork.thumbnail_url}

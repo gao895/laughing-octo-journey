@@ -78,10 +78,15 @@ cp .env.example .env.local
 
 ### DB migration
 
-`supabase/migrations/20260929000000_initial_schema.sql` に、テーブル・RLS・Storage バケットがすべて入っています。
+`supabase/migrations/` の SQL ファイルを **ファイル名の順に** 実行します。
+
+| ファイル                            | 内容                            |
+| ----------------------------------- | ------------------------------- |
+| `20260929000000_initial_schema.sql` | テーブル・RLS・Storage バケット |
+| `20261001000000_artist_names.sql`   | 作者名（個展ごと・作品ごと）    |
 
 **方法 A: SQL Editor（かんたん）**
-Supabase ダッシュボードの **SQL Editor** にファイルの中身を貼り付けて **Run** します。
+Supabase ダッシュボードの **SQL Editor** に各ファイルの中身を順番に貼り付けて **Run** します。
 
 **方法 B: Supabase CLI**
 
@@ -93,14 +98,14 @@ npx supabase db push
 
 作成されるもの:
 
-| テーブル         | 内容                                                                   |
-| ---------------- | ---------------------------------------------------------------------- |
-| `profiles`       | 表示名（作者名）など。サインアップ時にトリガーで自動作成               |
-| `galleries`      | 個展（title, slug, template, status, layout_mode, lighting, bgm_url…） |
-| `artworks`       | 作品（画像 URL、サムネイル、配置 position/rotation/scale、media_type） |
-| `gallery_visits` | 来場記録（`visitor_id` は匿名 ID にも対応）                            |
-| `likes`          | いいね（将来機能・テーブルと RLS のみ）                                |
-| `comments`       | コメント（将来機能・テーブルと RLS のみ）                              |
+| テーブル         | 内容                                                                                |
+| ---------------- | ----------------------------------------------------------------------------------- |
+| `profiles`       | 表示名（作者名）など。サインアップ時にトリガーで自動作成                            |
+| `galleries`      | 個展（title, artist_name, slug, template, status, layout_mode, lighting, bgm_url…） |
+| `artworks`       | 作品（画像 URL、サムネイル、配置 position/rotation/scale、media_type）              |
+| `gallery_visits` | 来場記録（`visitor_id` は匿名 ID にも対応）                                         |
+| `likes`          | いいね（将来機能・テーブルと RLS のみ）                                             |
+| `comments`       | コメント（将来機能・テーブルと RLS のみ）                                           |
 
 Storage: `gallery-assets` バケット（公開読み取り、10MB 上限、画像/音声 MIME のみ）。
 保存先は `gallery-assets/{user_id}/{gallery_id}/{asset_id}.webp` です。
