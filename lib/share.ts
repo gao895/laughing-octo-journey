@@ -1,6 +1,9 @@
 'use client';
 
 export function galleryUrl(slug: string): string {
+  // Single-file browser build (scripts/build-artifact.mjs): deep links use a bare #token.
+  const shareBase = process.env.NEXT_PUBLIC_SHARE_BASE;
+  if (shareBase) return `${shareBase}#g-${slug}`;
   const base =
     (typeof window !== 'undefined' && window.location.origin) ||
     process.env.NEXT_PUBLIC_SITE_URL ||

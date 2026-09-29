@@ -139,12 +139,20 @@ export class DemoRepository implements GalleryRepository {
   readonly mode = 'demo' as const;
   private cache: DemoState | null = null;
   private queue: Promise<unknown> = Promise.resolve();
+  /** True when IndexedDB is unavailable (private mode, blocked storage): data lives in memory only. */
+  private memoryOnly = false;
+  private memorySession: string | null = null;
 
   private async load(): Promise<DemoState> {
     if (this.cache) return this.cache;
-    const stored = await idbGet<DemoState>(STATE_KEY);
+    let stored: DemoState | undefined;
+    try {
+      stored = await idbGet<DemoState>(STATE_KEY);
+    } catch {
+      this.memoryOnly = true;
+    }
     this.cache = stored?.version === 1 ? stored : sampleState();
-    if (!stored) await idbSet(STATE_KEY, this.cache);
+    if (!stored && !this.memoryOnly) await idbSet(STATE_KEY, this.cache).catch(() => undefined);
     return this.cache;
   }
 
@@ -153,6 +161,7 @@ export class DemoRepository implements GalleryRepository {
     const run = this.queue.then(async () => {
       const state = await this.load();
       const result = await fn(state);
+      if (this.memoryOnly) return result;
       try {
         await idbSet(STATE_KEY, state);
       } catch (e) {
@@ -167,9 +176,19 @@ export class DemoRepository implements GalleryRepository {
 
   private sessionUserId(): string | null {
     try {
-      return localStorage.getItem(SESSION_KEY);
+      return localStorage.getItem(SESSION_KEY) ?? this.memorySession;
     } catch {
-      return null;
+      return this.memorySession;
+    }
+  }
+
+  private setSession(id: string | null): void {
+    this.memorySession = id;
+    try {
+      if (id) localStorage.setItem(SESSION_KEY, id);
+      else localStorage.removeItem(SESSION_KEY);
+    } catch {
+      // Storage blocked: the in-memory session is used instead.
     }
   }
 
@@ -211,7 +230,7 @@ export class DemoRepository implements GalleryRepository {
       }
       return user.id;
     });
-    localStorage.setItem(SESSION_KEY, id);
+    this.setSession(id);
   }
 
   async signUp(email: string, _password: string, displayName: string) {
@@ -228,12 +247,12 @@ export class DemoRepository implements GalleryRepository {
       s.users.push(user);
       return user.id;
     });
-    localStorage.setItem(SESSION_KEY, id);
+    this.setSession(id);
     return { needsEmailConfirmation: false };
   }
 
   async signOut(): Promise<void> {
-    localStorage.removeItem(SESSION_KEY);
+    this.setSession(null);
   }
 
   // ---------------------------------------------------------------- galleries
