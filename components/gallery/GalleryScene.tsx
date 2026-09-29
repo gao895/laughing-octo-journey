@@ -6,6 +6,8 @@ import type { Artwork } from '@/types/artwork';
 import type { Gallery } from '@/types/gallery';
 import type { GalleryLayout } from '@/lib/gallery/layout';
 import { getTemplate } from '@/lib/gallery/templates';
+import { applyAppearance, frameFor, readAppearance } from '@/lib/gallery/appearance';
+import { artworkAuthorName } from '@/lib/gallery/author';
 import { ArtworkFrame } from './ArtworkFrame';
 import { GalleryCamera } from './GalleryCamera';
 import { GalleryControls } from './GalleryControls';
@@ -15,7 +17,7 @@ import { TitleWall } from './TitleWall';
 import type { CameraFocus, MoveInputRef } from './types';
 
 export interface GallerySceneProps {
-  gallery: Pick<Gallery, 'template' | 'lighting' | 'title' | 'description'>;
+  gallery: Pick<Gallery, 'template' | 'lighting' | 'title' | 'description' | 'settings'>;
   authorName?: string;
   artworks: Artwork[];
   layout: GalleryLayout;
@@ -48,7 +50,9 @@ export function GalleryScene({
   controlsEnabled = true,
   onReady,
 }: GallerySceneProps) {
-  const template = getTemplate(gallery.template);
+  const appearance = readAppearance(gallery.settings);
+  const template = applyAppearance(getTemplate(gallery.template), appearance);
+  const frame = frameFor(template, appearance);
   const first = layout.rooms[0]!;
   const last = layout.rooms[layout.rooms.length - 1]!;
   const byId = new Map(artworks.map((a) => [a.id, a]));
@@ -90,7 +94,12 @@ export function GalleryScene({
             key={artwork.id}
             artwork={artwork}
             placement={placement}
-            frameColor={template.frame}
+            frame={frame}
+            caption={
+              appearance.showCaptions
+                ? { title: artwork.title, artist: artworkAuthorName(artwork, authorName) }
+                : null
+            }
             glow={template.artworkGlow}
             selected={artwork.id === selectedId}
             lowRes={lowRes}

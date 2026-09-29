@@ -21,8 +21,15 @@ export type LightingPreset = 'standard' | 'bright' | 'soft';
  * Free-form settings kept in a jsonb column so future features (AI suggestions,
  * wall colours, multiplayer options, avatars…) can be added without migrations.
  */
+export type FrameStyle = 'venue' | 'wood' | 'gold' | 'white' | 'black' | 'none';
+
 export interface GallerySettings {
+  /** '#rrggbb'; absent = the venue's own wall colour. */
   wallColor?: string;
+  /** Absent = 'venue' (the venue's own frame). */
+  frameStyle?: FrameStyle;
+  /** Museum-style caption plate beside each artwork. Absent = shown. */
+  showCaptions?: boolean;
   [key: string]: unknown;
 }
 

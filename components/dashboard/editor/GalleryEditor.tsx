@@ -40,6 +40,8 @@ import {
   validateAudioFile,
 } from '@/lib/gallery/validation';
 import { galleryAuthorName } from '@/lib/gallery/author';
+import { readAppearance } from '@/lib/gallery/appearance';
+import { getTemplate } from '@/lib/gallery/templates';
 import { copyText, galleryUrl } from '@/lib/share';
 import { isTouchDevice, isWebGLAvailable } from '@/lib/webgl';
 import { t } from '@/lib/i18n';
@@ -47,6 +49,7 @@ import { ArtworkUploader, type PreparedFile } from '../ArtworkUploader';
 import { LAYOUT_OPTIONS } from '../GalleryWizard';
 import { OptionCards } from '../OptionCards';
 import { TemplatePicker } from '../TemplatePicker';
+import { AppearancePanel } from './AppearancePanel';
 import { ArtworkListItem } from './ArtworkListItem';
 import { NudgeToolbar } from './NudgeToolbar';
 
@@ -545,6 +548,15 @@ export function GalleryEditor({ galleryId }: { galleryId: string }) {
                   value={gallery.template}
                   onChange={(id) => id !== gallery.template && setPendingTemplate(id)}
                   columns="sm:grid-cols-2"
+                />
+                <h2 className="mt-4 border-t border-white/5 pt-5 text-base font-semibold">
+                  {t.editor.looks}
+                </h2>
+                <AppearancePanel
+                  appearance={readAppearance(gallery.settings)}
+                  venueWall={getTemplate(gallery.template).wall}
+                  venueFrame={getTemplate(gallery.template).frame}
+                  onChange={(patch) => editGallery({ settings: { ...gallery.settings, ...patch } })}
                 />
               </div>
             )}

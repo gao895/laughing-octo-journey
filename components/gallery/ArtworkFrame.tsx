@@ -7,11 +7,15 @@ import { SRGBColorSpace, type MeshStandardMaterial } from 'three';
 import type { Artwork } from '@/types/artwork';
 import { artworkSize, type ArtworkPlacement } from '@/lib/gallery/layout';
 import { safeMediaUrl } from '@/lib/gallery/validation';
+import type { FrameSpec } from '@/lib/gallery/appearance';
+import { CaptionPlate, PLATE_H, PLATE_W } from './CaptionPlate';
 
 interface ArtworkFrameProps {
   artwork: Artwork;
   placement: ArtworkPlacement;
-  frameColor: string;
+  frame: FrameSpec;
+  /** Caption plate text; null hides the plate. */
+  caption?: { title: string; artist: string } | null;
   glow: number;
   selected?: boolean;
   /** Use the thumbnail texture (phones / many artworks) to save GPU memory. */
@@ -19,7 +23,6 @@ interface ArtworkFrameProps {
   onSelect?: (artwork: Artwork) => void;
 }
 
-const FRAME_BORDER = 0.07;
 /** Pointer movement (px) above which a press counts as a drag (looking around), not a click. */
 const CLICK_TOLERANCE = 6;
 
@@ -27,7 +30,8 @@ const CLICK_TOLERANCE = 6;
 export function ArtworkFrame({
   artwork,
   placement,
-  frameColor,
+  frame,
+  caption = null,
   glow,
   selected = false,
   lowRes = false,
@@ -62,15 +66,33 @@ export function ArtworkFrame({
       }}
     >
       {selected && (
-        <mesh position={[0, 0, -0.04]}>
-          <boxGeometry args={[w + FRAME_BORDER * 2 + 0.12, h + FRAME_BORDER * 2 + 0.12, 0.02]} />
+        // A thin plate just in front of the wall (the wall surface is at z = -0.03),
+        // so it never z-fights with the wall.
+        <mesh position={[0, 0, -0.02]}>
+          <planeGeometry args={[w + frame.border * 2 + 0.12, h + frame.border * 2 + 0.12]} />
           <meshBasicMaterial color="#d9c38a" />
         </mesh>
       )}
-      <mesh position={[0, 0, -0.022]}>
-        <boxGeometry args={[w + FRAME_BORDER * 2, h + FRAME_BORDER * 2, 0.04]} />
-        <meshStandardMaterial color={frameColor} roughness={0.5} metalness={0.2} />
-      </mesh>
+      {frame.border > 0 && (
+        <mesh position={[0, 0, -0.022]}>
+          <boxGeometry args={[w + frame.border * 2, h + frame.border * 2, 0.04]} />
+          <meshStandardMaterial
+            color={frame.color}
+            emissive={frame.color}
+            emissiveIntensity={frame.glow ?? 0}
+            roughness={frame.roughness}
+            metalness={frame.metalness}
+          />
+        </mesh>
+      )}
+      {caption && (
+        <CaptionPlate
+          title={caption.title}
+          artist={caption.artist}
+          x={w / 2 + frame.border + 0.12 + PLATE_W / 2}
+          y={-h / 2 + PLATE_H / 2}
+        />
+      )}
       {url ? (
         <TextureErrorBoundary fallback={placeholder}>
           <Suspense fallback={placeholder}>
