@@ -13,7 +13,8 @@ import {
 } from '@/lib/gallery/validation';
 import { blobToDataUrl } from '@/lib/image/optimize';
 import { SAMPLE_ARTWORKS, SAMPLE_GALLERY, svgToDataUrl } from '@/lib/demo/sample';
-import { FriendlyError } from '@/lib/errors';
+import { FriendlyError, logDev } from '@/lib/errors';
+import { notify } from '@/lib/notify';
 import { t } from '@/lib/i18n';
 import type {
   GalleryRepository,
@@ -187,8 +188,9 @@ export class DemoRepository implements GalleryRepository {
       try {
         await idbSet(STATE_KEY, state);
       } catch (e) {
-        this.cache = null; // reload the last good state next time
-        throw new FriendlyError(t.errors.storageFull, e);
+        // Storage full or blocked (e.g. a small quota inside an embedded page):
+        // keep working in memory for this session instead of failing.
+        this.fallBackToMemory(e);
       }
       return result;
     });
@@ -308,16 +310,23 @@ export class DemoRepository implements GalleryRepository {
       }));
   }
 
+  private fallBackToMemory(error: unknown): void {
+    if (this.memoryOnly) return;
+    this.memoryOnly = true;
+    logDev('demo storage', error);
+    notify(t.errors.storageSessionOnly);
+  }
+
   private async putMedia(id: string, blob: Blob): Promise<string> {
-    if (this.memoryOnly) {
-      this.memoryMedia.set(id, blob);
-    } else {
+    if (!this.memoryOnly) {
       try {
         await idbSet(`media:${id}`, blob);
+        return `${MEDIA_PREFIX}${id}`;
       } catch (e) {
-        throw new FriendlyError(t.errors.storageFull, e);
+        this.fallBackToMemory(e);
       }
     }
+    this.memoryMedia.set(id, blob);
     return `${MEDIA_PREFIX}${id}`;
   }
 

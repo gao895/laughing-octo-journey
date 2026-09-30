@@ -1,6 +1,15 @@
 'use client';
 
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
+import { onNotify } from '@/lib/notify';
 
 type ToastKind = 'info' | 'success' | 'error';
 interface ToastItem {
@@ -21,6 +30,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(() => push, [push]);
+
+  // Messages sent from outside React (lib/notify).
+  useEffect(() => onNotify((message) => push(message)), [push]);
 
   return (
     <ToastContext.Provider value={value}>

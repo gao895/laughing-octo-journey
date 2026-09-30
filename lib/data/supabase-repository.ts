@@ -27,6 +27,8 @@ import type {
 
 type Row = Record<string, unknown>;
 
+const VIDEO_MIME = { mp4: 'video/mp4', mov: 'video/quicktime', m4v: 'video/x-m4v' } as const;
+
 function fail(context: string, error: unknown, friendly: string = t.errors.generic): never {
   logDev(context, error);
   throw new FriendlyError(friendly, error);
@@ -278,8 +280,8 @@ export class SupabaseRepository implements GalleryRepository {
     const folder = `${user.id}/${gallery.id}`;
     const videoUrl = image.video
       ? await this.upload(
-          `${folder}/${assetId}.mp4`,
-          new Blob([image.video], { type: 'video/mp4' }),
+          `${folder}/${assetId}.${image.videoExt ?? 'mp4'}`,
+          new Blob([image.video], { type: VIDEO_MIME[image.videoExt ?? 'mp4'] }),
         )
       : null;
     const imageUrl = await this.upload(

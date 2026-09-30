@@ -15,7 +15,13 @@ export const ALLOWED_AUDIO_TYPES = [
 export const ALLOWED_AUDIO_EXTENSIONS = ['mp3', 'wav'] as const;
 export const IMAGE_ACCEPT = '.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp';
 /** Images and MP4 videos (作品を追加). */
-export const ARTWORK_ACCEPT = `${IMAGE_ACCEPT},.mp4,video/mp4`;
+export const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/x-m4v'] as const;
+export const ALLOWED_VIDEO_EXTENSIONS = ['mp4', 'mov', 'm4v'] as const;
+/**
+ * Images and videos (作品を追加). MOV is accepted so iPhones can hand over the original
+ * file instead of first converting ("書き出し") it to MP4, which needs free space.
+ */
+export const ARTWORK_ACCEPT = `${IMAGE_ACCEPT},.mp4,.mov,.m4v,video/mp4,video/quicktime,video/x-m4v`;
 export const AUDIO_ACCEPT = '.mp3,.wav,audio/mpeg,audio/wav';
 
 export const TITLE_MAX = 60;
@@ -45,18 +51,30 @@ export function validateImageFile(file: {
 }
 
 export function isVideoFile(file: { name: string; type: string }): boolean {
-  return file.type === 'video/mp4' || extensionOf(file.name) === 'mp4';
+  return (
+    file.type.startsWith('video/') ||
+    (ALLOWED_VIDEO_EXTENSIONS as readonly string[]).includes(extensionOf(file.name))
+  );
 }
 
-/** MP4 videos: checked by MIME type and extension, up to 50MB. */
+/** Container extension used when storing a video. */
+export function videoExtension(file: { name: string; type: string }): 'mp4' | 'mov' | 'm4v' {
+  const ext = extensionOf(file.name);
+  if (ext === 'mov' || file.type === 'video/quicktime') return 'mov';
+  if (ext === 'm4v' || file.type === 'video/x-m4v') return 'm4v';
+  return 'mp4';
+}
+
+/** MP4 / MOV videos: checked by extension and MIME type (when the browser provides one), up to 50MB. */
 export function validateVideoFile(file: {
   name: string;
   type: string;
   size: number;
 }): ValidationResult {
-  if (file.type !== 'video/mp4' || extensionOf(file.name) !== 'mp4') {
-    return { ok: false, message: t.errors.fileType };
-  }
+  const extOk = (ALLOWED_VIDEO_EXTENSIONS as readonly string[]).includes(extensionOf(file.name));
+  // Some phones report no MIME type for videos; the extension is then decisive.
+  const typeOk = file.type === '' || (ALLOWED_VIDEO_TYPES as readonly string[]).includes(file.type);
+  if (!extOk || !typeOk) return { ok: false, message: t.errors.fileType };
   if (file.size > MAX_VIDEO_BYTES) return { ok: false, message: t.errors.videoTooLarge };
   if (file.size === 0) return { ok: false, message: t.errors.videoBroken };
   return { ok: true };

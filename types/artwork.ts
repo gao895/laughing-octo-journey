@@ -50,6 +50,7 @@ export interface PreparedImage {
   height: number;
   /** Suggested title derived from the file name. */
   suggestedTitle: string;
-  /** Set for video artworks: the original MP4 (full/thumbnail are its poster). */
+  /** Set for video artworks: the original file (full/thumbnail are its poster). */
   video?: Blob;
+  videoExt?: 'mp4' | 'mov' | 'm4v';
 }

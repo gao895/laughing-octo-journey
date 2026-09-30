@@ -106,7 +106,7 @@ export const ja = {
     drop: 'ここに画像をドラッグ＆ドロップ',
     or: 'または',
     choose: '画像を選ぶ',
-    formats: '画像 JPG・PNG・WEBP（10MBまで）／動画 MP4（50MBまで）・複数OK',
+    formats: '画像 JPG・PNG・WEBP（10MBまで）／動画 MP4・MOV（50MBまで）・複数OK',
     videoBadge: '動画',
     processing: (done: number, total: number) => `作品を読み込んでいます… ${done} / ${total}`,
     addArtwork: '作品を追加',
@@ -252,7 +252,9 @@ export const ja = {
     network: '通信できませんでした。インターネット接続を確認してください。',
     upload: '作品をアップロードできませんでした。もう一度お試しください。',
     fileTooLarge: '画像サイズが大きすぎます。',
-    fileType: 'JPG、PNG、WEBP画像、またはMP4動画を選択してください。',
+    fileType: 'JPG、PNG、WEBP画像、またはMP4・MOV動画を選択してください。',
+    storageSessionOnly:
+      'ブラウザの保存容量が足りないため、この作品はページを閉じるまでの一時保存になります。',
     videoTooLarge: '動画のサイズが大きすぎます（50MBまで）。',
     videoBroken:
       'この動画は読み込めませんでした。MP4（H.264）形式で書き出した動画をお試しください。',

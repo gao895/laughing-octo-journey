@@ -3,6 +3,7 @@
 import type { PreparedImage } from '@/types/artwork';
 import { FriendlyError } from '@/lib/errors';
 import { t } from '@/lib/i18n';
+import { videoExtension } from '@/lib/gallery/validation';
 
 /** Long side of the image shown in the detail modal and on large screens. */
 export const FULL_MAX = 1600;
@@ -141,6 +142,7 @@ export async function prepareVideo(file: Blob, fileName = ''): Promise<PreparedI
       height: full.height,
       suggestedTitle: titleFromFileName(fileName),
       video: file,
+      videoExt: videoExtension({ name: fileName, type: file.type }),
     };
   } catch (e) {
     throw new FriendlyError(t.errors.videoBroken, e);

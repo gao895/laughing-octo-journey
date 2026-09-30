@@ -12,3 +12,8 @@ update storage.buckets
         'video/mp4'
       ]
   where id = 'gallery-assets';
+
+-- iPhone videos (MOV / M4V) are accepted as well, so phones need not convert them first.
+update storage.buckets
+  set allowed_mime_types = array_cat(allowed_mime_types, array['video/quicktime', 'video/x-m4v'])
+  where id = 'gallery-assets' and not ('video/quicktime' = any (allowed_mime_types));

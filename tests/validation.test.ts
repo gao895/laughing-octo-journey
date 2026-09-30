@@ -4,6 +4,7 @@ import {
   MAX_VIDEO_BYTES,
   isVideoFile,
   validateArtworkFile,
+  videoExtension,
   safeMediaUrl,
   sanitizeText,
   validateAudioFile,
@@ -59,11 +60,21 @@ describe('validateArtworkFile (images and MP4 videos)', () => {
       message: t.errors.videoTooLarge,
     });
     expect(validateArtworkFile({ name: 'a.mp4', type: 'video/mp4', size: 0 }).ok).toBe(false);
-    expect(validateArtworkFile({ name: 'a.mov', type: 'video/quicktime', size: 10 }).ok).toBe(
+    expect(validateArtworkFile({ name: 'a.avi', type: 'video/x-msvideo', size: 10 }).ok).toBe(
       false,
     );
     expect(validateArtworkFile({ name: 'a.mp4', type: 'text/html', size: 10 }).ok).toBe(false);
     expect(isVideoFile({ name: 'clip.MP4', type: '' })).toBe(true);
+  });
+  it('accepts iPhone MOV / M4V so phones need not convert them first', () => {
+    expect(
+      validateArtworkFile({ name: 'IMG_0001.MOV', type: 'video/quicktime', size: 10 }).ok,
+    ).toBe(true);
+    expect(validateArtworkFile({ name: 'clip.m4v', type: 'video/x-m4v', size: 10 }).ok).toBe(true);
+    // Some phones send no MIME type; the extension decides.
+    expect(validateArtworkFile({ name: 'clip.mov', type: '', size: 10 }).ok).toBe(true);
+    expect(videoExtension({ name: 'IMG_0001.MOV', type: 'video/quicktime' })).toBe('mov');
+    expect(videoExtension({ name: 'a.mp4', type: 'video/mp4' })).toBe('mp4');
   });
 });
 
