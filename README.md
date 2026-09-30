@@ -72,6 +72,8 @@ cp .env.example .env.local
 
 ## Supabase の設定
 
+> 本番公開の手順は **[docs/DEPLOY.md（本番公開ガイド）](docs/DEPLOY.md)** に、画面の操作順でまとめています。公開後は `https://<あなたのサイト>/setup` で設定を自動チェックできます。
+
 1. https://supabase.com でプロジェクトを作成します。
 2. **Project Settings → API** から `Project URL` と `anon public` キーを `.env.local` に設定します。
 3. **DB migration** を実行します（下記）。
@@ -82,7 +84,8 @@ cp .env.example .env.local
 
 ### DB migration
 
-`supabase/migrations/` の SQL ファイルを **ファイル名の順に** 実行します。
+いちばん簡単なのは、全部をまとめた **`supabase/setup.sql`** を SQL Editor に貼り付けて 1 回 Run する方法です（何度実行しても安全）。
+中身は `supabase/migrations/` の SQL ファイルをファイル名の順につなげたもので、`npm run db:setup-sql` で作り直せます。
 
 | ファイル                             | 内容                                     |
 | ------------------------------------ | ---------------------------------------- |
@@ -92,7 +95,7 @@ cp .env.example .env.local
 | `20261003000000_profile_avatars.sql` | プロフィールのアイコン画像のアップロード |
 
 **方法 A: SQL Editor（かんたん）**
-Supabase ダッシュボードの **SQL Editor** に各ファイルの中身を順番に貼り付けて **Run** します。
+Supabase ダッシュボードの **SQL Editor** に `supabase/setup.sql` の中身を貼り付けて **Run** します。
 
 **方法 B: Supabase CLI**
 
@@ -156,6 +159,9 @@ npm run lint        # ESLint
 npm run typecheck   # TypeScript
 npm run format      # Prettier で整形
 npm test            # ユニットテスト（レイアウト・バリデーション・slug など）
+npm run test:db     # マイグレーションと RLS のテスト（ローカルの PostgreSQL を一時的に起動）
+npm run db:setup-sql  # migrations から supabase/setup.sql を作り直す
+npm run build:artifact  # ブラウザだけで動くデモ版（1 ファイル）を作る
 
 # E2E（デモモードでユーザー操作を通しで確認。スクリーンショットは ./screenshots）
 npm run build && npx next start -p 3100 &
@@ -170,12 +176,15 @@ E2E スクリプトは Chromium を使います（`CHROMIUM_PATH` で実行フ�
 
 ## Vercel へのデプロイ
 
+詳しい手順は **[docs/DEPLOY.md](docs/DEPLOY.md)** を見てください。概要は次の通りです。
+
 1. このリポジトリを GitHub に push
 2. https://vercel.com/new でリポジトリを Import（Framework: Next.js は自動検出）
 3. **Environment Variables** に `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` /
    `NEXT_PUBLIC_SITE_URL`（例: `https://<project>.vercel.app`）を設定
 4. **Deploy**
 5. Supabase の **Authentication → URL Configuration** に本番 URL と `https://<project>.vercel.app/auth/callback` を追加
+6. `https://<project>.vercel.app/setup` を開き、すべて ✓ になっていることを確認
 
 ---
 

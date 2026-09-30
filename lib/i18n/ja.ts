@@ -80,6 +80,45 @@ export const ja = {
     aboutAuthor: '作者について',
     openAuthor: (name: string) => `${name} のプロフィールを見る`,
   },
+  setup: {
+    title: 'セットアップ確認',
+    lead: '本番用の Supabase が正しく設定されているかを確認します。すべて ✓ になれば公開の準備は完了です。',
+    rerun: 'もう一度確認',
+    checking: '確認しています…',
+    allGood: '準備完了です。アカウントを作って、最初の個展を公開してみましょう。',
+    demo: 'いまはデモモードです（Supabase の環境変数が未設定）。データはこのブラウザの中にだけ保存されます。',
+    redirectTitle: 'ログイン用のリダイレクト URL',
+    redirectBody:
+      'Supabase の Authentication → URL Configuration で、Site URL にこのサイトの URL を、Redirect URLs に次の URL を追加してください。',
+    detail: '詳細',
+    checks: {
+      env: {
+        name: '環境変数（接続先）',
+        fix: 'Vercel の Settings → Environment Variables に NEXT_PUBLIC_SUPABASE_URL と NEXT_PUBLIC_SUPABASE_ANON_KEY を設定し、再デプロイしてください。',
+      },
+      tables: {
+        name: 'データベースのテーブル',
+        fix: 'Supabase の SQL Editor に supabase/setup.sql の中身を貼り付けて Run してください。',
+      },
+      artists: {
+        name: '作者名の機能',
+        fix: '最新の supabase/setup.sql をもう一度実行してください（何度実行しても大丈夫です）。',
+      },
+      videos: {
+        name: '動画作品の機能',
+        fix: '最新の supabase/setup.sql をもう一度実行してください（何度実行しても大丈夫です）。',
+      },
+      profiles: {
+        name: 'プロフィールの機能',
+        fix: '最新の supabase/setup.sql をもう一度実行してください（何度実行しても大丈夫です）。',
+      },
+      storage: {
+        name: '画像・動画の保存場所（Storage）',
+        fix: 'supabase/setup.sql を実行すると gallery-assets という保存場所が作られます。実行済みなら Storage 画面で gallery-assets が Public になっているか確認してください。',
+      },
+    },
+    status: { ok: 'OK', fail: '要対応', skip: '未確認' },
+  },
   onboarding: {
     title: '個展を作るのはとても簡単です。',
     steps: ['作品を選ぶ', '会場を選ぶ', '公開する'],
