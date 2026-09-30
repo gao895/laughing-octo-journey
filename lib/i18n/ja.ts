@@ -75,7 +75,6 @@ export const ja = {
     bio: '自己紹介',
     bioPlaceholder: '例：夜空と星をテーマに、デジタルで絵を描いています。',
     bioHelp: '来場者が作者名を押すと表示されます。',
-    email: 'メールアドレス',
     saved: 'プロフィールを保存しました',
     count: (n: number, max: number) => `${n} / ${max}`,
     aboutAuthor: '作者について',

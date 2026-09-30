@@ -160,14 +160,6 @@ function ProfileForm({ user }: { user: AppUser }) {
           </p>
         </div>
 
-        <TextField
-          id="profile-email"
-          label={t.profile.email}
-          value={user.email}
-          readOnly
-          className="opacity-70"
-        />
-
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/5 pt-6">
           <Button variant="ghost" onClick={logout}>
             {t.common.logout}
