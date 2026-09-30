@@ -9,6 +9,7 @@ describe('readAppearance', () => {
       wallColor: null,
       frameStyle: 'venue',
       showCaptions: true,
+      backdrop: null,
     });
     expect(readAppearance(null).showCaptions).toBe(true);
   });
@@ -19,8 +20,15 @@ describe('readAppearance', () => {
       wallColor: 'red; background:url(x)',
       frameStyle: 'diamond',
       showCaptions: false,
+      backdrop: '../../etc/passwd',
     } as unknown as GallerySettings);
-    expect(a).toEqual({ wallColor: null, frameStyle: 'venue', showCaptions: false });
+    expect(a).toEqual({
+      wallColor: null,
+      frameStyle: 'venue',
+      showCaptions: false,
+      backdrop: null,
+    });
+    expect(readAppearance({ backdrop: 'canal' }).backdrop).toBe('canal');
     expect(readAppearance({ wallColor: '#AABBCC' }).wallColor).toBe('#aabbcc');
   });
 });

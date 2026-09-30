@@ -1,5 +1,6 @@
 import type { FrameStyle, GallerySettings } from '@/types/gallery';
 import type { TemplateStyle } from './templates';
+import { isBackdropId, type BackdropId } from './backdrops';
 
 /**
  * Per-exhibition look (wall colour, frames, caption plates), stored in the
@@ -54,6 +55,7 @@ export interface Appearance {
   wallColor: string | null;
   frameStyle: FrameStyle;
   showCaptions: boolean;
+  backdrop: BackdropId | null;
 }
 
 /** Validated appearance settings with defaults. */
@@ -63,6 +65,7 @@ export function readAppearance(settings: GallerySettings | null | undefined): Ap
     wallColor: isHexColor(s.wallColor) ? s.wallColor.toLowerCase() : null,
     frameStyle: isFrameStyle(s.frameStyle) ? s.frameStyle : 'venue',
     showCaptions: s.showCaptions !== false,
+    backdrop: isBackdropId(s.backdrop) ? s.backdrop : null,
   };
 }
 

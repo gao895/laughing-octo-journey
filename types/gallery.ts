@@ -30,6 +30,8 @@ export interface GallerySettings {
   frameStyle?: FrameStyle;
   /** Museum-style caption plate beside each artwork. Absent = shown. */
   showCaptions?: boolean;
+  /** Real-photo 360° backdrop id (lib/gallery/backdrops.ts); absent = indoor venue. */
+  backdrop?: string;
   [key: string]: unknown;
 }
 

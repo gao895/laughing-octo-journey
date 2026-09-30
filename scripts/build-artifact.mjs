@@ -4,11 +4,13 @@
  *
  *   node scripts/build-artifact.mjs            -> dist-artifact/my-virtual-gallery.html
  *   SHARE_BASE=https://… node scripts/…        -> share links become SHARE_BASE#g-<slug>
+ *
+ * The page needs dist-artifact/backdrops/* published next to it (relative URLs).
  */
 import { build } from 'esbuild';
 import postcss from 'postcss';
 import tailwind from '@tailwindcss/postcss';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 const root = path.resolve(import.meta.dirname, '..');
@@ -37,6 +39,8 @@ const js = await build({
     'process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY': '""',
     'process.env.NEXT_PUBLIC_SITE_URL': '""',
     'process.env.NEXT_PUBLIC_SHARE_BASE': JSON.stringify(process.env.SHARE_BASE ?? ''),
+    // Static files (backdrop photos) are published next to the page: relative URLs.
+    'process.env.NEXT_PUBLIC_ASSET_BASE': '""',
   },
 });
 
@@ -61,3 +65,7 @@ const html = `<title>My Virtual Gallery</title>
 const file = path.join(outDir, 'my-virtual-gallery.html');
 writeFileSync(file, html);
 console.log(`${path.relative(root, file)}  ${(html.length / 1024 / 1024).toFixed(2)} MB`);
+
+// Backdrop photos are published alongside the page (Artifact `files`).
+cpSync(path.join(root, 'public/backdrops'), path.join(outDir, 'backdrops'), { recursive: true });
+console.log('dist-artifact/backdrops/  (publish these files next to the page)');

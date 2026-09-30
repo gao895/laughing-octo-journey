@@ -14,6 +14,8 @@ import { GalleryControls } from './GalleryControls';
 import { GalleryLighting } from './GalleryLighting';
 import { GalleryRoom } from './GalleryRoom';
 import { TitleWall } from './TitleWall';
+import { Backdrop } from './Backdrop';
+import { BACKDROPS } from '@/lib/gallery/backdrops';
 import type { CameraFocus, MoveInputRef } from './types';
 
 export interface GallerySceneProps {
@@ -53,6 +55,7 @@ export function GalleryScene({
   const appearance = readAppearance(gallery.settings);
   const template = applyAppearance(getTemplate(gallery.template), appearance);
   const frame = frameFor(template, appearance);
+  const openAir = appearance.backdrop !== null;
   const first = layout.rooms[0]!;
   const last = layout.rooms[layout.rooms.length - 1]!;
   const byId = new Map(artworks.map((a) => [a.id, a]));
@@ -66,18 +69,28 @@ export function GalleryScene({
       onCreated={() => onReady?.()}
       className="!absolute inset-0"
     >
-      <color attach="background" args={[template.background]} />
-      {template.fog && (
-        <fog attach="fog" args={[template.fog.color, template.fog.near, template.fog.far]} />
+      {appearance.backdrop ? (
+        <Suspense fallback={<color attach="background" args={[template.background]} />}>
+          <Backdrop id={appearance.backdrop} centerZ={(first.zStart + last.zEnd) / 2} />
+        </Suspense>
+      ) : (
+        <>
+          <color attach="background" args={[template.background]} />
+          {template.fog && (
+            <fog attach="fog" args={[template.fog.color, template.fog.near, template.fog.far]} />
+          )}
+        </>
       )}
       <GalleryCamera />
       <GalleryLighting
         template={template}
         preset={gallery.lighting}
         length={first.zStart - last.zEnd}
+        outdoor={openAir}
+        sun={appearance.backdrop ? BACKDROPS[appearance.backdrop].sun : undefined}
       />
       <Suspense fallback={null}>
-        <GalleryRoom layout={layout} template={template} />
+        <GalleryRoom layout={layout} template={template} openAir={openAir} />
       </Suspense>
       <TitleWall
         title={gallery.title}
@@ -95,6 +108,7 @@ export function GalleryScene({
             artwork={artwork}
             placement={placement}
             frame={frame}
+            panelColor={openAir ? template.wall : null}
             caption={
               appearance.showCaptions
                 ? { title: artwork.title, artist: artworkAuthorName(artwork, authorName) }

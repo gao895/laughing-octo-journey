@@ -197,6 +197,18 @@ export const ja = {
     captionsOn: '表示する',
     captionsOff: '表示しない',
     looks: '見た目の調整',
+    backdrop: '背景（実写）',
+    backdropHelp:
+      '実際の風景写真に囲まれた屋外の展示になります。壁と天井はなくなり、作品はパネルに飾られます。',
+    backdropNone: 'なし（会場のまま）',
+    backdrops: {
+      meadow: '朝の草原',
+      canal: '運河の街',
+      waterside: '夕暮れの水辺',
+      beach: '白い砂浜',
+      night: '星空の丘',
+    },
+    backdropCredit: '写真：Poly Haven（CC0）',
     adjust: '位置を調整',
     selectArtwork: (name: string) => `${name} を選ぶ`,
   },

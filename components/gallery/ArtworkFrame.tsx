@@ -14,6 +14,8 @@ interface ArtworkFrameProps {
   artwork: Artwork;
   placement: ArtworkPlacement;
   frame: FrameSpec;
+  /** Open-air venues: colour of the freestanding panel the artwork hangs on. */
+  panelColor?: string | null;
   /** Caption plate text; null hides the plate. */
   caption?: { title: string; artist: string } | null;
   glow: number;
@@ -31,6 +33,7 @@ export function ArtworkFrame({
   artwork,
   placement,
   frame,
+  panelColor = null,
   caption = null,
   glow,
   selected = false,
@@ -72,6 +75,15 @@ export function ArtworkFrame({
           <planeGeometry args={[w + frame.border * 2 + 0.12, h + frame.border * 2 + 0.12]} />
           <meshBasicMaterial color="#d9c38a" />
         </mesh>
+      )}
+      {panelColor && (
+        <ArtworkPanel
+          color={panelColor}
+          left={w / 2 + frame.border + 0.4}
+          right={w / 2 + frame.border + (caption ? 0.32 + PLATE_W : 0.4)}
+          top={h / 2 + frame.border + 0.45}
+          bottom={placement.y}
+        />
       )}
       {frame.border > 0 && (
         <mesh position={[0, 0, -0.022]}>
@@ -145,6 +157,32 @@ function ArtworkImage({
         roughness={0.9}
         toneMapped={false}
       />
+    </mesh>
+  );
+}
+
+/**
+ * Freestanding exhibition panel from the floor to just above the artwork. Its front
+ * face sits where the wall surface would be (local z = -0.03).
+ */
+function ArtworkPanel({
+  color,
+  left,
+  right,
+  top,
+  bottom,
+}: {
+  color: string;
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+}) {
+  const depth = 0.16;
+  return (
+    <mesh position={[(right - left) / 2, (top - bottom) / 2, -0.03 - depth / 2]}>
+      <boxGeometry args={[left + right, top + bottom, depth]} />
+      <meshStandardMaterial color={color} roughness={0.9} />
     </mesh>
   );
 }

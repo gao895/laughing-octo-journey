@@ -7,6 +7,7 @@ import {
   WALL_SWATCHES,
   type Appearance,
 } from '@/lib/gallery/appearance';
+import { BACKDROP_IDS, backdropThumbUrl } from '@/lib/gallery/backdrops';
 import { t } from '@/lib/i18n';
 
 interface Props {
@@ -27,6 +28,53 @@ export function AppearancePanel({ appearance, venueWall, venueFrame, onChange }:
   const wall = appearance.wallColor;
   return (
     <div className="flex flex-col gap-6">
+      <section className="flex flex-col gap-3" aria-labelledby="backdrop-label">
+        <h3 id="backdrop-label" className="text-sm font-medium">
+          {t.editor.backdrop}
+        </h3>
+        <p className="text-mist text-xs leading-relaxed">{t.editor.backdropHelp}</p>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            aria-pressed={appearance.backdrop === null}
+            onClick={() => onChange({ backdrop: undefined })}
+            className={`overflow-hidden rounded-xl border text-left transition ${
+              appearance.backdrop === null
+                ? 'border-gold ring-gold/30 ring-2'
+                : 'border-line hover:border-white/30'
+            }`}
+          >
+            <span className="bg-slate text-mist flex aspect-[2/1] items-center justify-center text-xs">
+              🏛️
+            </span>
+            <span className="bg-coal block px-2 py-1.5 text-xs">{t.editor.backdropNone}</span>
+          </button>
+          {BACKDROP_IDS.map((id) => (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={appearance.backdrop === id}
+              onClick={() => onChange({ backdrop: id })}
+              className={`overflow-hidden rounded-xl border text-left transition ${
+                appearance.backdrop === id
+                  ? 'border-gold ring-gold/30 ring-2'
+                  : 'border-line hover:border-white/30'
+              }`}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element -- static thumbnail */}
+              <img
+                src={backdropThumbUrl(id)}
+                alt=""
+                loading="lazy"
+                className="block aspect-[2/1] w-full object-cover"
+              />
+              <span className="bg-coal block px-2 py-1.5 text-xs">{t.editor.backdrops[id]}</span>
+            </button>
+          ))}
+        </div>
+        <p className="text-mist/70 text-[10px]">{t.editor.backdropCredit}</p>
+      </section>
+
       <section className="flex flex-col gap-3" aria-labelledby="wall-color-label">
         <h3 id="wall-color-label" className="text-sm font-medium">
           {t.editor.wallColor}

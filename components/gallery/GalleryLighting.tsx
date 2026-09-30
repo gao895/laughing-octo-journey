@@ -18,12 +18,30 @@ export function GalleryLighting({
   template,
   preset,
   length,
+  outdoor = false,
+  sun = 0.9,
 }: {
   template: TemplateStyle;
   preset: LightingPreset;
   length: number;
+  /** A real-photo backdrop lights the scene; keep only a neutral fill and a sun. */
+  outdoor?: boolean;
+  /** Outdoor sun strength (per backdrop). */
+  sun?: number;
 }) {
   const m = PRESET_MULTIPLIER[preset];
+  if (outdoor) {
+    return (
+      <>
+        <ambientLight intensity={0.15 * m} />
+        <directionalLight
+          position={[3, 10, 2]}
+          target-position={[0, 0, -length / 2]}
+          intensity={sun * m}
+        />
+      </>
+    );
+  }
   return (
     <>
       <ambientLight intensity={template.ambient * m} />

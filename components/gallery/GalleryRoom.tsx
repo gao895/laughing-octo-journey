@@ -13,10 +13,17 @@ const T = 0.2; // wall thickness
 interface RoomProps {
   layout: GalleryLayout;
   template: TemplateStyle;
+  /**
+   * Open-air exhibition on a real-photo backdrop: a raised floor platform, no walls,
+   * ceiling or venue decorations (artworks bring their own panels, see ArtworkFrame).
+   */
+  openAir?: boolean;
 }
 
+const PLATFORM_HEIGHT = 0.12;
+
 /** Floor, walls, ceiling and template-specific decorations. */
-export function GalleryRoom({ layout, template }: RoomProps) {
+export function GalleryRoom({ layout, template, openAir = false }: RoomProps) {
   const first = layout.rooms[0]!;
   const last = layout.rooms[layout.rooms.length - 1]!;
   const length = first.zStart - last.zEnd;
@@ -32,6 +39,31 @@ export function GalleryRoom({ layout, template }: RoomProps) {
   }, [template.floorPattern, template.floor, length]);
 
   useEffect(() => () => floorMap?.dispose(), [floorMap]);
+
+  if (openAir) {
+    return (
+      <group>
+        {/* Platform: its top is the walking surface (y = 0) */}
+        <mesh position={[0, -PLATFORM_HEIGHT / 2, midZ]}>
+          <boxGeometry args={[ROOM_WIDTH + 1.2, PLATFORM_HEIGHT, length + 1.2]} />
+          <meshStandardMaterial
+            color={floorMap ? '#ffffff' : template.floor}
+            map={floorMap}
+            roughness={template.floorRoughness}
+            metalness={template.floorMetalness}
+          />
+        </mesh>
+        {layout.rooms.slice(1).map((room) => (
+          <Partition key={room.index} z={room.zStart} template={template} />
+        ))}
+        {/* Freestanding panel carrying the title wall */}
+        <mesh position={[0, 1.95, last.zEnd - T / 2]}>
+          <boxGeometry args={[5.2, 3.9, T]} />
+          <meshStandardMaterial color={template.wall} roughness={0.9} />
+        </mesh>
+      </group>
+    );
+  }
 
   return (
     <group>
