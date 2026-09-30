@@ -7,6 +7,8 @@ import { resolvePlacements, viewpointFor } from '@/lib/gallery/layout';
 import { useClientValue } from '@/lib/hooks/useClientValue';
 import { isTouchDevice, isWebGLAvailable } from '@/lib/webgl';
 import { t } from '@/lib/i18n';
+import { Avatar } from '@/components/ui/Avatar';
+import { Modal } from '@/components/ui/Modal';
 import { ArtworkModal } from './ArtworkModal';
 import { BgmPlayer } from './BgmPlayer';
 import { GalleryScene } from './GalleryScene';
@@ -25,7 +27,8 @@ interface GalleryViewerProps {
 
 /** Full-screen visitor experience used by the public page and the owner preview. */
 export function GalleryViewer({ data, topRight, banner, showShare = true }: GalleryViewerProps) {
-  const { gallery, artworks, authorName } = data;
+  const { gallery, artworks, authorName, author } = data;
+  const [authorOpen, setAuthorOpen] = useState(false);
   const [selected, setSelected] = useState<Artwork | null>(null);
   const [ready, setReady] = useState(false);
   const [hintVisible, setHintVisible] = useState(true);
@@ -83,9 +86,15 @@ export function GalleryViewer({ data, topRight, banner, showShare = true }: Gall
         <div className="min-w-0 text-white drop-shadow">
           <h1 className="truncate text-base font-semibold sm:text-lg">{gallery.title}</h1>
           {authorName && (
-            <p className="text-xs text-white/75">
+            <button
+              type="button"
+              onClick={() => setAuthorOpen(true)}
+              className="pointer-events-auto mt-1 flex items-center gap-1.5 rounded-full py-0.5 pr-2 text-xs text-white/80 hover:text-white"
+              aria-label={t.profile.openAuthor(authorName)}
+            >
+              <Avatar url={author.avatarUrl} name={authorName} size="xs" />
               {t.viewer.author}：{authorName}
-            </p>
+            </button>
           )}
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -154,6 +163,23 @@ export function GalleryViewer({ data, topRight, banner, showShare = true }: Gall
         )}
         <BgmPlayer url={gallery.bgm_url} />
       </div>
+
+      <Modal
+        open={authorOpen}
+        onClose={() => setAuthorOpen(false)}
+        title={t.profile.aboutAuthor}
+        size="sm"
+      >
+        <div className="flex flex-col items-center gap-4 text-center">
+          <Avatar url={author.avatarUrl} name={authorName} size="lg" />
+          <p className="text-lg font-semibold">{authorName}</p>
+          {author.bio && (
+            <p className="text-paper/85 text-sm leading-relaxed whitespace-pre-wrap">
+              {author.bio}
+            </p>
+          )}
+        </div>
+      </Modal>
 
       <ArtworkModal artwork={selected} authorName={authorName} onClose={() => setSelected(null)} />
     </div>

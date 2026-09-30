@@ -2,7 +2,7 @@
 
 import type { Artwork, ArtworkUpdate, PreparedImage } from '@/types/artwork';
 import type { Gallery, GalleryUpdate, GalleryWithArtworks } from '@/types/gallery';
-import type { AppUser } from '@/types/profile';
+import type { AppUser, ProfileUpdate } from '@/types/profile';
 import { createSlug } from '@/lib/gallery/slug';
 import { cleanArtistName, galleryAuthorName } from '@/lib/gallery/author';
 import {
@@ -10,6 +10,7 @@ import {
   TITLE_MAX,
   DESCRIPTION_MAX,
   DISPLAY_NAME_MAX,
+  BIO_MAX,
 } from '@/lib/gallery/validation';
 import { blobToDataUrl } from '@/lib/image/optimize';
 import { SAMPLE_ARTWORKS, SAMPLE_GALLERY, svgToDataUrl } from '@/lib/demo/sample';
@@ -33,6 +34,18 @@ interface DemoUser {
   id: string;
   email: string;
   displayName: string;
+  avatarUrl?: string | null;
+  bio?: string;
+}
+
+function toAppUser(u: DemoUser): AppUser {
+  return {
+    id: u.id,
+    email: u.email,
+    displayName: u.displayName,
+    avatarUrl: u.avatarUrl ?? null,
+    bio: u.bio ?? '',
+  };
 }
 
 interface DemoState {
@@ -129,6 +142,7 @@ function sampleState(): DemoState {
       {
         id: SAMPLE_USER_ID,
         email: 'sample-author@demo.invalid',
+        bio: '夜空と星をテーマに、デジタルで絵を描いています。',
         displayName: SAMPLE_GALLERY.authorName,
       },
     ],
@@ -236,7 +250,7 @@ export class DemoRepository implements GalleryRepository {
     if (!id) return null;
     const s = await this.load();
     const u = s.users.find((x) => x.id === id);
-    return u ? { id: u.id, email: u.email, displayName: u.displayName } : null;
+    return u ? toAppUser(u) : null;
   }
 
   async signIn(email: string): Promise<void> {
@@ -277,6 +291,25 @@ export class DemoRepository implements GalleryRepository {
 
   async signOut(): Promise<void> {
     this.setSession(null);
+  }
+
+  async updateProfile(update: ProfileUpdate): Promise<AppUser> {
+    const current = await this.requireUser();
+    const displayName = sanitizeText(update.displayName, DISPLAY_NAME_MAX);
+    if (!displayName) throw new FriendlyError(t.errors.displayNameRequired);
+    return this.mutate((s) => {
+      const u = s.users.find((x) => x.id === current.id);
+      if (!u) throw new FriendlyError(t.errors.forbidden);
+      u.displayName = displayName;
+      u.bio = sanitizeText(update.bio, BIO_MAX, { multiline: true });
+      u.avatarUrl = update.avatarUrl;
+      return toAppUser(u);
+    });
+  }
+
+  async uploadAvatar(image: Blob): Promise<string> {
+    await this.requireUser();
+    return blobToDataUrl(image);
   }
 
   // ---------------------------------------------------------------- galleries
@@ -356,6 +389,7 @@ export class DemoRepository implements GalleryRepository {
   }
 
   private async bundle(s: DemoState, g: Gallery): Promise<GalleryWithArtworks> {
+    const owner = s.users.find((u) => u.id === g.user_id);
     const artworks = s.artworks
       .filter((a) => a.gallery_id === g.id)
       .sort((a, b) => a.order_index - b.order_index);
@@ -364,7 +398,8 @@ export class DemoRepository implements GalleryRepository {
       artworks: await Promise.all(
         artworks.map(async (a) => ({ ...a, video_url: await this.resolveMedia(a.video_url) })),
       ),
-      authorName: galleryAuthorName(g, s.users.find((u) => u.id === g.user_id)?.displayName ?? ''),
+      authorName: galleryAuthorName(g, owner?.displayName ?? ''),
+      author: { avatarUrl: owner?.avatarUrl ?? null, bio: owner?.bio ?? '' },
     };
   }
 

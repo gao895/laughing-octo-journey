@@ -95,6 +95,35 @@ export async function prepareImage(source: Blob, fileName = ''): Promise<Prepare
   };
 }
 
+/** Side of the square profile icon, in pixels. */
+export const AVATAR_SIZE = 256;
+
+/** Profile icon: centre-cropped to a square, resized and re-encoded (EXIF removed). */
+export async function prepareAvatar(source: Blob): Promise<Blob> {
+  let img: ImageBitmap | HTMLImageElement;
+  try {
+    img = await loadBitmap(source);
+  } catch (e) {
+    throw new FriendlyError(t.errors.imageBroken, e);
+  }
+  const { w, h } = sizeOf(img);
+  const side = Math.min(w, h);
+  const canvas = document.createElement('canvas');
+  canvas.width = AVATAR_SIZE;
+  canvas.height = AVATAR_SIZE;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new FriendlyError(t.errors.imageBroken);
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img, (w - side) / 2, (h - side) / 2, side, side, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
+  if ('close' in img) img.close();
+  const toBlob = (type: string) =>
+    new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, 0.85));
+  let blob = await toBlob('image/webp');
+  if (!blob || blob.type !== 'image/webp') blob = await toBlob('image/jpeg');
+  if (!blob) throw new FriendlyError(t.errors.imageBroken);
+  return blob;
+}
+
 const VIDEO_TIMEOUT_MS = 15000;
 
 /** Waits for a media event, failing on error or timeout. */

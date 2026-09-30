@@ -6,6 +6,7 @@ import SignupPage from '@/app/signup/page';
 import ExplorePage from '@/app/explore/page';
 import DashboardPage from '@/app/dashboard/page';
 import NewGalleryPage from '@/app/dashboard/new/page';
+import ProfilePage from '@/app/dashboard/profile/page';
 import NotFound from '@/app/not-found';
 import { GalleryEditor } from '@/components/dashboard/editor/GalleryEditor';
 import { OwnerPreview } from '@/components/gallery/OwnerPreview';
@@ -27,6 +28,7 @@ function Routes() {
   if (path === '/explore') return <ExplorePage />;
   if (path === '/dashboard') return <DashboardPage />;
   if (path === '/dashboard/new') return <NewGalleryPage />;
+  if (path === '/dashboard/profile') return <ProfilePage />;
   if (a === 'dashboard' && b === 'gallery' && c && d === 'edit')
     return <GalleryEditor key={c} galleryId={c} />;
   if (a === 'dashboard' && b === 'gallery' && c && d === 'preview')

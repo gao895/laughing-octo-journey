@@ -27,6 +27,7 @@ export const AUDIO_ACCEPT = '.mp3,.wav,audio/mpeg,audio/wav';
 export const TITLE_MAX = 60;
 export const DESCRIPTION_MAX = 1000;
 export const DISPLAY_NAME_MAX = 50;
+export const BIO_MAX = 500;
 
 export type ValidationResult = { ok: true } | { ok: false; message: string };
 

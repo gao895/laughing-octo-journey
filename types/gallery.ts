@@ -1,3 +1,4 @@
+import type { AuthorProfile } from './profile';
 import type { Artwork } from './artwork';
 
 export type GalleryStatus = 'draft' | 'published' | 'private';
@@ -62,6 +63,8 @@ export interface GalleryWithArtworks {
   gallery: Gallery;
   artworks: Artwork[];
   authorName: string;
+  /** The owner's public profile (icon and bio). */
+  author: AuthorProfile;
 }
 
 export type GalleryUpdate = Partial<

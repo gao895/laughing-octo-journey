@@ -7,7 +7,7 @@ import type {
   LayoutMode,
   TemplateId,
 } from '@/types/gallery';
-import type { AppUser } from '@/types/profile';
+import type { AppUser, ProfileUpdate } from '@/types/profile';
 
 export interface PublishedGalleryCard {
   gallery: Gallery;
@@ -45,6 +45,11 @@ export interface GalleryRepository {
     displayName: string,
   ): Promise<{ needsEmailConfirmation: boolean }>;
   signOut(): Promise<void>;
+
+  /** プロフィール設定: display name, bio and icon of the signed-in user. */
+  updateProfile(update: ProfileUpdate): Promise<AppUser>;
+  /** Uploads a prepared (square, small) icon image and returns its URL. */
+  uploadAvatar(image: Blob): Promise<string>;
 
   listMyGalleries(): Promise<(GallerySummary & { visit_count: number })[]>;
   listPublishedGalleries(limit?: number): Promise<PublishedGalleryCard[]>;

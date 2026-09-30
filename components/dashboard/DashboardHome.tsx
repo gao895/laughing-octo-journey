@@ -1,8 +1,10 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import type { GallerySummary } from '@/types/gallery';
+import { Avatar } from '@/components/ui/Avatar';
 import { Button, ButtonLink } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -95,7 +97,19 @@ export function DashboardHome() {
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">{t.dashboard.title}</h1>
-          {user && <p className="text-mist mt-1 text-sm">{user.displayName}</p>}
+          {user && (
+            <div className="text-mist mt-2 flex items-center gap-2 text-sm">
+              <Avatar url={user.avatarUrl} name={user.displayName} size="xs" />
+              <span>{user.displayName}</span>
+              <span aria-hidden>・</span>
+              <Link
+                href="/dashboard/profile"
+                className="text-gold underline-offset-4 hover:underline"
+              >
+                {t.profile.edit}
+              </Link>
+            </div>
+          )}
         </div>
         {items && items.length > 0 && (
           <ButtonLink href="/dashboard/new">{t.dashboard.newGallery}</ButtonLink>

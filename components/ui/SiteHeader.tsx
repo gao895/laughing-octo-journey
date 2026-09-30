@@ -1,23 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useCurrentUser } from '@/lib/hooks/useCurrentUser';
-import { getRepository } from '@/lib/data';
 import { isSupabaseConfigured } from '@/lib/supabase/config';
 import { t } from '@/lib/i18n';
+import { Avatar } from './Avatar';
 import { buttonClass } from './Button';
 
 export function SiteHeader() {
   const { user, loading } = useCurrentUser();
-  const router = useRouter();
   const demo = !isSupabaseConfigured();
-
-  async function logout() {
-    await getRepository().signOut();
-    router.push('/');
-    router.refresh();
-  }
 
   return (
     <header className="bg-ink/80 sticky top-0 z-40 border-b border-white/5 backdrop-blur">
@@ -44,9 +36,14 @@ export function SiteHeader() {
                 <Link href="/dashboard" className={buttonClass('secondary', 'sm')}>
                   {t.common.dashboard}
                 </Link>
-                <button type="button" onClick={logout} className={buttonClass('ghost', 'sm')}>
-                  {t.common.logout}
-                </button>
+                <Link
+                  href="/dashboard/profile"
+                  className="ml-1 rounded-full focus-visible:outline-2"
+                  aria-label={t.profile.title}
+                  title={t.profile.title}
+                >
+                  <Avatar url={user.avatarUrl} name={user.displayName} size="sm" />
+                </Link>
               </>
             ) : (
               <Link href="/login" className={buttonClass('secondary', 'sm')}>

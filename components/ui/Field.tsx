@@ -10,13 +10,15 @@ interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 export function TextField({ label, hint, error, className = '', ...rest }: TextFieldProps) {
-  const id = useId();
+  const generatedId = useId();
+  // A caller-provided id (stable across republishes) wins; the label follows it.
+  const id = rest.id ?? generatedId;
   return (
     <div className={`flex flex-col gap-2 ${className}`}>
       <label htmlFor={id} className="text-paper/90 text-sm font-medium">
         {label}
       </label>
-      <input id={id} className={fieldClass} aria-invalid={Boolean(error)} {...rest} />
+      <input className={fieldClass} aria-invalid={Boolean(error)} {...rest} id={id} />
       {error ? (
         <p className="text-sm text-red-300" role="alert">
           {error}
@@ -34,13 +36,15 @@ interface TextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
 }
 
 export function TextArea({ label, hint, className = '', ...rest }: TextAreaProps) {
-  const id = useId();
+  const generatedId = useId();
+  // A caller-provided id (stable across republishes) wins; the label follows it.
+  const id = rest.id ?? generatedId;
   return (
     <div className={`flex flex-col gap-2 ${className}`}>
       <label htmlFor={id} className="text-paper/90 text-sm font-medium">
         {label}
       </label>
-      <textarea id={id} rows={3} className={`${fieldClass} resize-y`} {...rest} />
+      <textarea rows={3} className={`${fieldClass} resize-y`} {...rest} id={id} />
       {hint && <p className="text-mist text-xs">{hint}</p>}
     </div>
   );

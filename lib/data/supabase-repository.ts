@@ -3,7 +3,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Artwork, ArtworkUpdate, PreparedImage } from '@/types/artwork';
 import type { Gallery, GalleryUpdate, GalleryWithArtworks } from '@/types/gallery';
-import type { AppUser } from '@/types/profile';
+import type { AppUser, ProfileUpdate } from '@/types/profile';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { STORAGE_BUCKET } from '@/lib/supabase/config';
 import { createSlug } from '@/lib/gallery/slug';
@@ -14,6 +14,7 @@ import {
   TITLE_MAX,
   DESCRIPTION_MAX,
   DISPLAY_NAME_MAX,
+  BIO_MAX,
 } from '@/lib/gallery/validation';
 import { extensionForBlob } from '@/lib/image/optimize';
 import { FriendlyError, logDev } from '@/lib/errors';
@@ -62,7 +63,7 @@ export class SupabaseRepository implements GalleryRepository {
     if (error || !data.user) return null;
     const { data: profile } = await this.db
       .from('profiles')
-      .select('display_name')
+      .select('display_name, avatar_url, bio')
       .eq('user_id', data.user.id)
       .maybeSingle();
     return {
@@ -73,7 +74,42 @@ export class SupabaseRepository implements GalleryRepository {
         (data.user.user_metadata?.display_name as string | undefined) ||
         (data.user.email ?? '').split('@')[0] ||
         '',
+      avatarUrl: (profile?.avatar_url as string | null | undefined) ?? null,
+      bio: (profile?.bio as string | null | undefined) ?? '',
     };
+  }
+
+  async updateProfile(update: ProfileUpdate): Promise<AppUser> {
+    const user = await this.requireUser();
+    const displayName = sanitizeText(update.displayName, DISPLAY_NAME_MAX);
+    if (!displayName) throw new FriendlyError(t.errors.displayNameRequired);
+    // Upsert so accounts created before the profile trigger still work (RLS: own row only).
+    const { error } = await this.db.from('profiles').upsert(
+      {
+        user_id: user.id,
+        display_name: displayName,
+        bio: sanitizeText(update.bio, BIO_MAX, { multiline: true }) || null,
+        avatar_url: update.avatarUrl,
+      },
+      { onConflict: 'user_id' },
+    );
+    if (error) fail('updateProfile', error, t.errors.save);
+    // Remove a replaced icon from storage.
+    if (user.avatarUrl && user.avatarUrl !== update.avatarUrl) {
+      const old = this.storagePathFromUrl(user.avatarUrl);
+      if (old?.startsWith(`${user.id}/profile/`)) {
+        await this.db.storage.from(STORAGE_BUCKET).remove([old]);
+      }
+    }
+    return (await this.getUser()) ?? user;
+  }
+
+  async uploadAvatar(image: Blob): Promise<string> {
+    const user = await this.requireUser();
+    return this.upload(
+      `${user.id}/profile/avatar-${crypto.randomUUID()}.${extensionForBlob(image)}`,
+      image,
+    );
   }
 
   async signIn(email: string, password: string): Promise<void> {
@@ -163,11 +199,19 @@ export class SupabaseRepository implements GalleryRepository {
       .eq('gallery_id', gallery.id)
       .order('order_index', { ascending: true });
     if (error) fail('artworks', error);
-    const names = await this.authorNames([gallery.user_id]);
+    const { data: profile } = await this.db
+      .from('profiles')
+      .select('display_name, avatar_url, bio')
+      .eq('user_id', gallery.user_id)
+      .maybeSingle();
     return {
       gallery,
       artworks: (data ?? []) as Artwork[],
-      authorName: galleryAuthorName(gallery, names.get(gallery.user_id) ?? ''),
+      authorName: galleryAuthorName(gallery, (profile?.display_name as string | undefined) ?? ''),
+      author: {
+        avatarUrl: (profile?.avatar_url as string | null | undefined) ?? null,
+        bio: (profile?.bio as string | null | undefined) ?? '',
+      },
     };
   }
 
