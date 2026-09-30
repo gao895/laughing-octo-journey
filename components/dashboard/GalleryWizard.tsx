@@ -229,7 +229,10 @@ export function GalleryWizard() {
                         alt=""
                         className="h-24 w-24 rounded-lg object-cover sm:h-32 sm:w-32"
                       />
-                      <span className="text-mist text-xs">#{i + 1}</span>
+                      <span className="text-mist text-xs">
+                        #{i + 1}
+                        {item.image.video && ` ・ ▶ ${t.uploader.videoBadge}`}
+                      </span>
                     </div>
                     <div className="flex flex-1 flex-col gap-3">
                       <TextField

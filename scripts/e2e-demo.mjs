@@ -117,7 +117,7 @@ try {
     mimeType: 'image/gif',
     buffer: Buffer.from('GIF89a'),
   });
-  await page.getByText('JPG、PNG、WEBP画像を選択してください。').first().waitFor();
+  await page.getByText('JPG、PNG、WEBP画像、またはMP4動画を選択してください。').first().waitFor();
   step('invalid file type rejected with friendly message');
   await input.setInputFiles(await makeImages(context));
   await page.getByLabel('作品タイトル').nth(3).waitFor({ timeout: 30000 });

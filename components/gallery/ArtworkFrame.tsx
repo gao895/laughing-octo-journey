@@ -1,9 +1,9 @@
 'use client';
 
-import { Component, Suspense, useEffect, useRef, useState, type ReactNode } from 'react';
+import { Component, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { useTexture } from '@react-three/drei';
-import { SRGBColorSpace, type MeshStandardMaterial } from 'three';
+import { SRGBColorSpace, Vector3, VideoTexture, type Mesh, type MeshStandardMaterial } from 'three';
 import type { Artwork } from '@/types/artwork';
 import { artworkSize, type ArtworkPlacement } from '@/lib/gallery/layout';
 import { safeMediaUrl } from '@/lib/gallery/validation';
@@ -43,6 +43,7 @@ export function ArtworkFrame({
   const [hovered, setHovered] = useState(false);
   const { w, h } = artworkSize(artwork.width, artwork.height, placement.scale);
   const url = safeMediaUrl(lowRes ? artwork.thumbnail_url : artwork.image_url);
+  const videoUrl = artwork.media_type === 'video' ? safeMediaUrl(artwork.video_url) : null;
 
   useEffect(() => {
     if (!hovered) return;
@@ -114,6 +115,8 @@ export function ArtworkFrame({
       ) : (
         placeholder
       )}
+      {/* Video artworks: the poster above shows until the video can play. */}
+      {videoUrl && <ArtworkVideo url={videoUrl} w={w} h={h} highlighted={hovered || selected} />}
     </group>
   );
 }
@@ -183,6 +186,76 @@ function ArtworkPanel({
     <mesh position={[(right - left) / 2, (top - bottom) / 2, -0.03 - depth / 2]}>
       <boxGeometry args={[left + right, top + bottom, depth]} />
       <meshStandardMaterial color={color} roughness={0.9} />
+    </mesh>
+  );
+}
+
+/** Videos play (muted, looping) only while a visitor is this close, to save battery and GPU. */
+const VIDEO_PLAY_DISTANCE = 14;
+
+function ArtworkVideo({
+  url,
+  w,
+  h,
+  highlighted,
+}: {
+  url: string;
+  w: number;
+  h: number;
+  highlighted: boolean;
+}) {
+  const mesh = useRef<Mesh>(null);
+  const [ready, setReady] = useState(false);
+  const lastCheck = useRef(0);
+  const worldPos = useMemo(() => new Vector3(), []);
+
+  const { video, texture } = useMemo(() => {
+    const v = document.createElement('video');
+    v.crossOrigin = 'anonymous';
+    v.loop = true;
+    v.muted = true;
+    v.playsInline = true;
+    v.preload = 'metadata';
+    v.src = url;
+    const tex = new VideoTexture(v);
+    tex.colorSpace = SRGBColorSpace;
+    return { video: v, texture: tex };
+  }, [url]);
+
+  useEffect(() => {
+    const onReady = () => setReady(true);
+    video.addEventListener('loadeddata', onReady);
+    return () => {
+      video.removeEventListener('loadeddata', onReady);
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+      texture.dispose();
+    };
+  }, [video, texture]);
+
+  // Play when the visitor is nearby, pause otherwise (checked twice a second).
+  useFrame(({ camera, clock }) => {
+    const t = clock.elapsedTime;
+    if (t - lastCheck.current < 0.5 || !mesh.current) return;
+    lastCheck.current = t;
+    mesh.current.getWorldPosition(worldPos);
+    const near = worldPos.distanceTo(camera.position) < VIDEO_PLAY_DISTANCE;
+    if (near && video.paused && document.visibilityState === 'visible') {
+      video.play().catch(() => undefined);
+    } else if (!near && !video.paused) {
+      video.pause();
+    }
+  });
+
+  return (
+    <mesh ref={mesh} position={[0, 0, 0.004]} visible={ready}>
+      <planeGeometry args={[w, h]} />
+      <meshBasicMaterial
+        map={texture}
+        color={highlighted ? '#ffffff' : '#e2e2e2'}
+        toneMapped={false}
+      />
     </mesh>
   );
 }

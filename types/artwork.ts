@@ -9,8 +9,11 @@ export interface Artwork {
   /** For group shows: creator of this artwork. Null = the exhibition's 作者名. */
   artist_name: string | null;
   media_type: MediaType;
+  /** Image artworks: the image. Video artworks: the poster (first frame). */
   image_url: string;
   thumbnail_url: string;
+  /** Video artworks (media_type 'video'): the MP4 file. */
+  video_url: string | null;
   /** Original pixel size after optimisation; used to keep the aspect ratio in 3D. */
   width: number;
   height: number;
@@ -39,7 +42,7 @@ export type ArtworkUpdate = Partial<
   >
 >;
 
-/** An optimised image ready to be uploaded. */
+/** An optimised image (or a video with its poster frame) ready to be uploaded. */
 export interface PreparedImage {
   full: Blob;
   thumbnail: Blob;
@@ -47,4 +50,6 @@ export interface PreparedImage {
   height: number;
   /** Suggested title derived from the file name. */
   suggestedTitle: string;
+  /** Set for video artworks: the original MP4 (full/thumbnail are its poster). */
+  video?: Blob;
 }

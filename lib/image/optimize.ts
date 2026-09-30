@@ -29,14 +29,17 @@ async function loadBitmap(source: Blob): Promise<ImageBitmap | HTMLImageElement>
   }
 }
 
-function sizeOf(img: ImageBitmap | HTMLImageElement): { w: number; h: number } {
+type Drawable = ImageBitmap | HTMLImageElement | HTMLVideoElement;
+
+function sizeOf(img: Drawable): { w: number; h: number } {
+  if ('videoWidth' in img) return { w: img.videoWidth, h: img.videoHeight };
   return 'naturalWidth' in img
     ? { w: img.naturalWidth || img.width, h: img.naturalHeight || img.height }
     : { w: img.width, h: img.height };
 }
 
 async function encode(
-  img: ImageBitmap | HTMLImageElement,
+  img: Drawable,
   maxSide: number,
   quality: number,
 ): Promise<{ blob: Blob; width: number; height: number }> {
@@ -89,6 +92,63 @@ export async function prepareImage(source: Blob, fileName = ''): Promise<Prepare
     height: full.height,
     suggestedTitle: titleFromFileName(fileName),
   };
+}
+
+const VIDEO_TIMEOUT_MS = 15000;
+
+/** Waits for a media event, failing on error or timeout. */
+function once(video: HTMLVideoElement, event: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`video ${event} timeout`)), VIDEO_TIMEOUT_MS);
+    const done = (fn: () => void) => () => {
+      clearTimeout(timer);
+      video.removeEventListener(event, ok);
+      video.removeEventListener('error', fail);
+      fn();
+    };
+    const ok = done(resolve);
+    const fail = done(() => reject(video.error ?? new Error('video error')));
+    video.addEventListener(event, ok);
+    video.addEventListener('error', fail);
+  });
+}
+
+/**
+ * Prepares an MP4 artwork: the video itself is uploaded as is, and a poster frame
+ * (shortly after the start) is encoded like an image for thumbnails and loading.
+ * Fails with a friendly message when this browser cannot decode the video.
+ */
+export async function prepareVideo(file: Blob, fileName = ''): Promise<PreparedImage> {
+  const url = URL.createObjectURL(file);
+  const video = document.createElement('video');
+  video.muted = true;
+  video.playsInline = true;
+  video.preload = 'auto';
+  try {
+    const loaded = once(video, 'loadeddata');
+    video.src = url;
+    await loaded;
+    if (!video.videoWidth || !video.videoHeight) throw new Error('no video track');
+    const seeked = once(video, 'seeked');
+    video.currentTime = Math.min(0.5, (video.duration || 1) / 3);
+    await seeked;
+    const full = await encode(video, FULL_MAX, 0.86);
+    const thumbnail = await encode(video, THUMB_MAX, 0.8);
+    return {
+      full: full.blob,
+      thumbnail: thumbnail.blob,
+      width: full.width,
+      height: full.height,
+      suggestedTitle: titleFromFileName(fileName),
+      video: file,
+    };
+  } catch (e) {
+    throw new FriendlyError(t.errors.videoBroken, e);
+  } finally {
+    video.removeAttribute('src');
+    video.load();
+    URL.revokeObjectURL(url);
+  }
 }
 
 export function extensionForBlob(blob: Blob): 'webp' | 'jpg' {

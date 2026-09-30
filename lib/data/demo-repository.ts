@@ -77,6 +77,22 @@ async function idbSet<T>(key: string, value: T): Promise<void> {
   });
 }
 
+async function idbDelete(key: string): Promise<void> {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).delete(key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/**
+ * Videos are too large to live inside the single state object, so each is stored
+ * as its own IndexedDB entry and referenced as `demo-media:<id>`.
+ */
+const MEDIA_PREFIX = 'demo-media:';
+
 const now = () => new Date().toISOString();
 
 function sampleState(): DemoState {
@@ -91,6 +107,7 @@ function sampleState(): DemoState {
       description: a.description,
       artist_name: null,
       media_type: 'image',
+      video_url: null,
       image_url: url,
       thumbnail_url: url,
       width: a.width,
@@ -144,6 +161,8 @@ export class DemoRepository implements GalleryRepository {
   private queue: Promise<unknown> = Promise.resolve();
   /** True when IndexedDB is unavailable (private mode, blocked storage): data lives in memory only. */
   private memoryOnly = false;
+  private memoryMedia = new Map<string, Blob>();
+  private mediaObjectUrls = new Map<string, string>();
   private memorySession: string | null = null;
 
   private async load(): Promise<DemoState> {
@@ -289,12 +308,53 @@ export class DemoRepository implements GalleryRepository {
       }));
   }
 
-  private bundle(s: DemoState, g: Gallery): GalleryWithArtworks {
+  private async putMedia(id: string, blob: Blob): Promise<string> {
+    if (this.memoryOnly) {
+      this.memoryMedia.set(id, blob);
+    } else {
+      try {
+        await idbSet(`media:${id}`, blob);
+      } catch (e) {
+        throw new FriendlyError(t.errors.storageFull, e);
+      }
+    }
+    return `${MEDIA_PREFIX}${id}`;
+  }
+
+  /** Turns a `demo-media:` reference into a playable blob: URL. */
+  private async resolveMedia(ref: string | null | undefined): Promise<string | null> {
+    if (!ref) return null;
+    if (!ref.startsWith(MEDIA_PREFIX)) return ref;
+    const id = ref.slice(MEDIA_PREFIX.length);
+    const cached = this.mediaObjectUrls.get(id);
+    if (cached) return cached;
+    const blob =
+      this.memoryMedia.get(id) ?? (await idbGet<Blob>(`media:${id}`).catch(() => undefined));
+    if (!blob) return null;
+    const url = URL.createObjectURL(blob);
+    this.mediaObjectUrls.set(id, url);
+    return url;
+  }
+
+  private async removeMedia(ref: string | null | undefined): Promise<void> {
+    if (!ref?.startsWith(MEDIA_PREFIX)) return;
+    const id = ref.slice(MEDIA_PREFIX.length);
+    this.memoryMedia.delete(id);
+    const url = this.mediaObjectUrls.get(id);
+    if (url) URL.revokeObjectURL(url);
+    this.mediaObjectUrls.delete(id);
+    if (!this.memoryOnly) await idbDelete(`media:${id}`).catch(() => undefined);
+  }
+
+  private async bundle(s: DemoState, g: Gallery): Promise<GalleryWithArtworks> {
+    const artworks = s.artworks
+      .filter((a) => a.gallery_id === g.id)
+      .sort((a, b) => a.order_index - b.order_index);
     return {
       gallery: g,
-      artworks: s.artworks
-        .filter((a) => a.gallery_id === g.id)
-        .sort((a, b) => a.order_index - b.order_index),
+      artworks: await Promise.all(
+        artworks.map(async (a) => ({ ...a, video_url: await this.resolveMedia(a.video_url) })),
+      ),
       authorName: galleryAuthorName(g, s.users.find((u) => u.id === g.user_id)?.displayName ?? ''),
     };
   }
@@ -358,6 +418,7 @@ export class DemoRepository implements GalleryRepository {
     await this.mutate(async (s) => {
       await this.ownedGallery(s, id);
       s.galleries = s.galleries.filter((g) => g.id !== id);
+      for (const a of s.artworks) if (a.gallery_id === id) await this.removeMedia(a.video_url);
       s.artworks = s.artworks.filter((a) => a.gallery_id !== id);
       s.visits = s.visits.filter((v) => v.gallery_id !== id);
     });
@@ -374,15 +435,18 @@ export class DemoRepository implements GalleryRepository {
       blobToDataUrl(image.full),
       blobToDataUrl(image.thumbnail),
     ]);
+    const id = crypto.randomUUID();
+    const videoRef = image.video ? await this.putMedia(id, image.video) : null;
     return this.mutate(async (s) => {
       const g = await this.ownedGallery(s, gallery.id);
       const artwork: Artwork = {
-        id: crypto.randomUUID(),
+        id,
         gallery_id: g.id,
         title: sanitizeText(input.title, TITLE_MAX),
         description: sanitizeText(input.description, DESCRIPTION_MAX, { multiline: true }),
         artist_name: null,
-        media_type: 'image',
+        media_type: videoRef ? 'video' : 'image',
+        video_url: videoRef,
         image_url: full,
         thumbnail_url: thumb,
         width: image.width,
@@ -399,7 +463,7 @@ export class DemoRepository implements GalleryRepository {
       s.artworks.push(artwork);
       g.cover_image_url ??= thumb;
       g.updated_at = now();
-      return artwork;
+      return { ...artwork, video_url: await this.resolveMedia(videoRef) };
     });
   }
 
@@ -423,6 +487,8 @@ export class DemoRepository implements GalleryRepository {
   async deleteArtwork(artwork: Artwork): Promise<void> {
     await this.mutate(async (s) => {
       const g = await this.ownedGallery(s, artwork.gallery_id);
+      const stored = s.artworks.find((a) => a.id === artwork.id);
+      await this.removeMedia(stored?.video_url);
       s.artworks = s.artworks.filter((a) => a.id !== artwork.id);
       if (g.cover_image_url === artwork.thumbnail_url) {
         g.cover_image_url = s.artworks.find((a) => a.gallery_id === g.id)?.thumbnail_url ?? null;

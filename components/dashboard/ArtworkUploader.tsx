@@ -4,8 +4,8 @@ import { useRef, useState, type DragEvent } from 'react';
 import type { PreparedImage } from '@/types/artwork';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
-import { IMAGE_ACCEPT, validateImageFile } from '@/lib/gallery/validation';
-import { prepareImage } from '@/lib/image/optimize';
+import { ARTWORK_ACCEPT, isVideoFile, validateArtworkFile } from '@/lib/gallery/validation';
+import { prepareImage, prepareVideo } from '@/lib/image/optimize';
 import { logDev, toFriendlyMessage } from '@/lib/errors';
 import { t } from '@/lib/i18n';
 
@@ -42,7 +42,7 @@ export function ArtworkUploader({
     const accepted: File[] = [];
     const errors = new Set<string>();
     for (const file of files) {
-      const result = validateImageFile(file);
+      const result = validateArtworkFile(file);
       if (result.ok) accepted.push(file);
       else errors.add(result.message);
     }
@@ -53,7 +53,10 @@ export function ArtworkUploader({
     const prepared: PreparedFile[] = [];
     for (const file of accepted) {
       try {
-        prepared.push({ image: await prepareImage(file, file.name), fileName: file.name });
+        const image = isVideoFile(file)
+          ? await prepareVideo(file, file.name)
+          : await prepareImage(file, file.name);
+        prepared.push({ image, fileName: file.name });
       } catch (e) {
         logDev('prepareImage', e);
         toast(`${file.name}: ${toFriendlyMessage(e, t.errors.imageBroken)}`, 'error');
@@ -89,7 +92,7 @@ export function ArtworkUploader({
       <input
         ref={input}
         type="file"
-        accept={IMAGE_ACCEPT}
+        accept={ARTWORK_ACCEPT}
         multiple
         className="sr-only"
         onChange={(e) => void handleFiles(e.target.files)}

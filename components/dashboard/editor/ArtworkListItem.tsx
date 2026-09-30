@@ -54,6 +54,11 @@ export function ArtworkListItem({
           <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 text-[10px]">
             #{index + 1}
           </span>
+          {artwork.media_type === 'video' && (
+            <span className="absolute top-1 right-1 rounded bg-black/70 px-1.5 text-[10px]">
+              ▶ {t.uploader.videoBadge}
+            </span>
+          )}
         </button>
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <TextField

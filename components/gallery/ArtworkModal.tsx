@@ -16,22 +16,43 @@ interface ArtworkModalProps {
 /** Artwork details: image, title, author and description. */
 export function ArtworkModal({ artwork, authorName, onClose }: ArtworkModalProps) {
   const src = safeMediaUrl(artwork?.image_url);
+  const videoSrc = artwork?.media_type === 'video' ? safeMediaUrl(artwork.video_url) : null;
   const artworkName = artwork ? artworkAuthorName(artwork, authorName) : authorName;
   return (
     <Modal open={Boolean(artwork)} onClose={onClose} title={artwork?.title || undefined} size="lg">
       {artwork && (
         <div className="flex flex-col gap-5">
-          {src && (
-            <div className="flex justify-center overflow-hidden rounded-xl bg-black/40">
-              {/* eslint-disable-next-line @next/next/no-img-element -- user uploads / data URLs */}
-              <img
-                src={src}
-                alt={artwork.title}
-                className="max-h-[60dvh] w-auto object-contain"
+          {videoSrc ? (
+            <div className="flex justify-center overflow-hidden rounded-xl bg-black">
+              {/* Opened by a click, so playback with sound is allowed; controls let visitors pause. */}
+              <video
+                key={videoSrc}
+                src={videoSrc}
+                poster={src ?? undefined}
+                controls
+                autoPlay
+                playsInline
+                loop
+                className="max-h-[60dvh] w-auto"
                 width={artwork.width}
                 height={artwork.height}
+                aria-label={artwork.title}
+                data-testid="artwork-video"
               />
             </div>
+          ) : (
+            src && (
+              <div className="flex justify-center overflow-hidden rounded-xl bg-black/40">
+                {/* eslint-disable-next-line @next/next/no-img-element -- user uploads / data URLs */}
+                <img
+                  src={src}
+                  alt={artwork.title}
+                  className="max-h-[60dvh] w-auto object-contain"
+                  width={artwork.width}
+                  height={artwork.height}
+                />
+              </div>
+            )
           )}
           <div className="space-y-3">
             {artworkName && (

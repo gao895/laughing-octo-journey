@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   MAX_IMAGE_BYTES,
+  MAX_VIDEO_BYTES,
+  isVideoFile,
+  validateArtworkFile,
   safeMediaUrl,
   sanitizeText,
   validateAudioFile,
@@ -38,6 +41,29 @@ describe('validateImageFile', () => {
       ok: false,
       message: t.errors.fileTooLarge,
     });
+  });
+});
+
+describe('validateArtworkFile (images and MP4 videos)', () => {
+  it('accepts MP4 up to 50MB and images up to 10MB', () => {
+    expect(
+      validateArtworkFile({ name: 'a.mp4', type: 'video/mp4', size: 40 * 1024 * 1024 }).ok,
+    ).toBe(true);
+    expect(validateArtworkFile({ name: 'a.png', type: 'image/png', size: 1000 }).ok).toBe(true);
+  });
+  it('rejects large, empty or non-MP4 videos with friendly messages', () => {
+    expect(
+      validateArtworkFile({ name: 'a.mp4', type: 'video/mp4', size: MAX_VIDEO_BYTES + 1 }),
+    ).toEqual({
+      ok: false,
+      message: t.errors.videoTooLarge,
+    });
+    expect(validateArtworkFile({ name: 'a.mp4', type: 'video/mp4', size: 0 }).ok).toBe(false);
+    expect(validateArtworkFile({ name: 'a.mov', type: 'video/quicktime', size: 10 }).ok).toBe(
+      false,
+    );
+    expect(validateArtworkFile({ name: 'a.mp4', type: 'text/html', size: 10 }).ok).toBe(false);
+    expect(isVideoFile({ name: 'clip.MP4', type: '' })).toBe(true);
   });
 });
 

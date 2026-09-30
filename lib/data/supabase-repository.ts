@@ -276,6 +276,12 @@ export class SupabaseRepository implements GalleryRepository {
     if (gallery.user_id !== user.id) throw new FriendlyError(t.errors.forbidden);
     const assetId = crypto.randomUUID();
     const folder = `${user.id}/${gallery.id}`;
+    const videoUrl = image.video
+      ? await this.upload(
+          `${folder}/${assetId}.mp4`,
+          new Blob([image.video], { type: 'video/mp4' }),
+        )
+      : null;
     const imageUrl = await this.upload(
       `${folder}/${assetId}.${extensionForBlob(image.full)}`,
       image.full,
@@ -291,7 +297,8 @@ export class SupabaseRepository implements GalleryRepository {
         gallery_id: gallery.id,
         title: sanitizeText(input.title, TITLE_MAX),
         description: sanitizeText(input.description, DESCRIPTION_MAX, { multiline: true }),
-        media_type: 'image',
+        media_type: videoUrl ? 'video' : 'image',
+        video_url: videoUrl,
         image_url: imageUrl,
         thumbnail_url: thumbUrl,
         width: image.width,
@@ -335,7 +342,8 @@ export class SupabaseRepository implements GalleryRepository {
     await this.requireUser();
     const { error } = await this.db.from('artworks').delete().eq('id', artwork.id);
     if (error) fail('deleteArtwork', error);
-    const paths = [artwork.image_url, artwork.thumbnail_url]
+    const paths = [artwork.image_url, artwork.thumbnail_url, artwork.video_url]
+      .filter((u): u is string => Boolean(u))
       .map((u) => this.storagePathFromUrl(u))
       .filter((p): p is string => Boolean(p));
     if (paths.length) await this.db.storage.from(STORAGE_BUCKET).remove(paths);

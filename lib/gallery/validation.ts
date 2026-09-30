@@ -1,6 +1,7 @@
 import { t } from '@/lib/i18n';
 
 export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+export const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
 export const MAX_AUDIO_BYTES = 10 * 1024 * 1024;
 export const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 export const ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'] as const;
@@ -13,6 +14,8 @@ export const ALLOWED_AUDIO_TYPES = [
 ] as const;
 export const ALLOWED_AUDIO_EXTENSIONS = ['mp3', 'wav'] as const;
 export const IMAGE_ACCEPT = '.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp';
+/** Images and MP4 videos (作品を追加). */
+export const ARTWORK_ACCEPT = `${IMAGE_ACCEPT},.mp4,video/mp4`;
 export const AUDIO_ACCEPT = '.mp3,.wav,audio/mpeg,audio/wav';
 
 export const TITLE_MAX = 60;
@@ -39,6 +42,33 @@ export function validateImageFile(file: {
   if (file.size > MAX_IMAGE_BYTES) return { ok: false, message: t.errors.fileTooLarge };
   if (file.size === 0) return { ok: false, message: t.errors.imageBroken };
   return { ok: true };
+}
+
+export function isVideoFile(file: { name: string; type: string }): boolean {
+  return file.type === 'video/mp4' || extensionOf(file.name) === 'mp4';
+}
+
+/** MP4 videos: checked by MIME type and extension, up to 50MB. */
+export function validateVideoFile(file: {
+  name: string;
+  type: string;
+  size: number;
+}): ValidationResult {
+  if (file.type !== 'video/mp4' || extensionOf(file.name) !== 'mp4') {
+    return { ok: false, message: t.errors.fileType };
+  }
+  if (file.size > MAX_VIDEO_BYTES) return { ok: false, message: t.errors.videoTooLarge };
+  if (file.size === 0) return { ok: false, message: t.errors.videoBroken };
+  return { ok: true };
+}
+
+/** An artwork file: an image (10MB) or an MP4 video (50MB). */
+export function validateArtworkFile(file: {
+  name: string;
+  type: string;
+  size: number;
+}): ValidationResult {
+  return isVideoFile(file) ? validateVideoFile(file) : validateImageFile(file);
 }
 
 export function validateAudioFile(file: {
